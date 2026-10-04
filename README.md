@@ -20,6 +20,8 @@ A Workflow Management System is a system that defines, manages, and executes wor
 
 ### 2. Work Structure
 
+The scenario is based in a commercial bank where customers apply for loans. The workflow manages the application from submission to approval, rejection, or a request for more information. The main participants are the customer, loan officer, credit analyst, manager and compliance officer. Key work includes checking documents, verifying information, performing credit and affordability checks, completing compliance checks, and making the final decision. Some checks can happen in parallel, while approval may depend on earlier checks being completed. Exceptions include missing documents, failed checks and applications requiring escalation. The workflow can also connect to credit bureaus, customer databases and notification systems. The outcome is an approved, rejected or incomplete application.
+
 ### 3. Assignment and Routing
 
 ### 4. Approvals, Rejection and Escalation
