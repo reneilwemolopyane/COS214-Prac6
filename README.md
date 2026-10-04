@@ -20,7 +20,7 @@ A Workflow Management System is a system that defines, manages, and executes wor
 
 ### 2. Work Structure
 
-The scenario is based in a commercial bank where customers apply for loans. The workflow manages the application from submission to approval, rejection, or a request for more information. The main participants are the customer, loan officer, credit analyst, manager and compliance officer. Key work includes checking documents, verifying information, performing credit and affordability checks, completing compliance checks, and making the final decision. Some checks can happen in parallel, while approval may depend on earlier checks being completed. Exceptions include missing documents, failed checks and applications requiring escalation. The workflow can also connect to credit bureaus, customer databases and notification systems. The outcome is an approved, rejected or incomplete application.
+A workflow can be structured at different levels, with individual work items grouped into larger stages or sub-processes to represent complex processes more clearly. Work items can also have dependencies, meaning one task may need to be completed before another can begin, while some tasks can run in parallel and later join together. During execution, work items can move through different states such as available, assigned, running, completed or suspended, so TIVIDY needs to track their current state, completed work and what can happen next. 
 
 ### 3. Assignment and Routing
 
