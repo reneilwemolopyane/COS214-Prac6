@@ -4,7 +4,7 @@
 
 | Student Name and Surname | Student Number |
 |---|---|
-| Lizalise Mbonisweni |  |
+| Lizalise Mbonisweni | u23587874 |
 | Boikemelo Masoka | u25128648 |
 | Thembelisha Skosana | u25224663 |
 | Lethabo Molobi |  |
@@ -23,6 +23,8 @@ A Workflow Management System is a system that defines, manages, and executes wor
 ### 3. Assignment and Routing
 
 ### 4. Approvals, Rejection and Escalation
+
+Approval is a normal state in a workflow, not an error: the workflow pauses until a decision arrives and then follows the matching outcome of approval, rejection or escalation (Temporal Technologies, 2026). Approval rules vary between processes. Steps may be approved sequentially or in parallel, and a step may need every approver, a quorum, or any one approver, while a single rejection can veto the whole step (django-workflow-kit, n.d.). Rejection stops the request from reaching later approval steps, and the approver must record a reason that stays visible on the request (ServiceNow, n.d.). Escalation stops work from waiting indefinitely. If no decision arrives before a timeout, the workflow re-notifies the approver, then notifies their manager, and finally applies a default decision. Approvers can also delegate when unavailable (EmpowerID, n.d.; ServiceNow, n.d.). For TIVIDY, this means approval modes, timeouts and escalation chains belong to the workflow definition, so they can change without rewriting the work-item classes. The approval status, decision reason and escalation history belong to each running instance.
 
 ### 5. Events and Failures
 
