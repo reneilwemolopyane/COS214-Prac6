@@ -8,7 +8,7 @@
 | Boikemelo Masoka | u25128648 |
 | Thembelisha Skosana | u25224663 |
 | Lethabo Molobi |  |
-| Boitumelo Monareng |  | u25208943
+| Boitumelo Monareng |  | u25208943 |
 | Reneilwe Molopyane | u25161874 |
 | Dingalethu Ngumbela | u25170547 |
 
@@ -23,6 +23,7 @@ A Workflow Management System is a system that defines, manages, and executes wor
 A workflow can be structured at different levels, with individual work items grouped into larger stages or sub-processes to represent complex processes more clearly. Work items can also have dependencies, meaning one task may need to be completed before another can begin, while some tasks can run in parallel and later join together. During execution, work items can move through different states such as available, assigned, running, completed or suspended, so TIVIDY needs to track their current state, completed work and what can happen next. 
 
 ### 3. Assignment and Routing
+Resources are modelled separately from the process, and a resource is anything capable of doing work, whether a person or a piece of equipment. People sit in an organisational structure of positions, units and teams, and have roles, capabilities, schedules and histories (Russell et al., 2004). Roles separate who does the work from the process definition. A task names a role such as Manager, and the person who fills it is only chosen when the work item becomes runnable, so one definition can serve many instances with different people (Russell et al., 2004). Allocation strategies are also kept separate from the work itself. Some are fixed at design time, such as role-based, capability-based, history-based and separation of duties, where the person who prepares a check cannot countersign it. Others select among eligible people, for example at random, round robin or shortest queue, and allocation can happen early, when the item becomes enabled, or late (Russell et al., 2004). A system can offer an item to one resource or to many, where the first to claim it wins, or allocate it directly. Under push the system assigns the item, and under pull the resource claims it. A work item moves from created to offered, allocated, started and completed, with suspended and failed as exceptions, and each change is started either by the system or by the resource. Assignment can also change through delegation, deallocation and escalation, where a stalled item is automatically reassigned after a deadline passes, and some tasks are automatic and need no person at all (Russell et al., 2004). For TIVIDY, this means roles, allocation rules and escalation deadlines belong to the workflow definition, so they can change without rewriting the work-item classes. The specific participants assigned, their workload and the assignment history belong to each running instance.
 
 ### 4. Approvals, Rejection and Escalation
 
@@ -40,3 +41,4 @@ Workflow history serves as the chronological, event driven, append only log of a
 
 ### References
 
+Russell, N., ter Hofstede, A.H.M., Edmond, D. and van der Aalst, W.M.P., 2004. Workflow Resource Patterns. Technische Universiteit Eindhoven. Available at: https://pure.tue.nl/ws/files/1984893/591788.pdf
