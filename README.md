@@ -7,7 +7,7 @@
 | Lizalise Mbonisweni | u23587874 |
 | Boikemelo Masoka | u25128648 |
 | Thembelisha Skosana | u25224663 |
-| Lethabo Molobi |  |
+| Lethabo Molobi | u25090209 |
 | Boitumelo Monareng | u25208943 |
 | Reneilwe Molopyane | u25161874 |
 | Dingalethu Ngumbela | u25170547 |
@@ -35,6 +35,7 @@ Approval is a normal state in a workflow, not an error: the workflow pauses unti
 
 
 ### 6. Integration and Reusability
+Workflow systems keep the engine separate from external systems through defined interfaces: the WfMC Reference Model has dedicated interfaces for invoking external applications and for communicating with other engines [1], and Camunda uses outbound connectors to call external systems and inbound connectors to bring events in [2]. Integration details are configuration, not code: Power Automate's connection references let one connection be reused across flows and environments without editing each action [3]. For TIVIDY, this means a generic integration abstraction (databases, APIs, notifications) with configurable endpoints, and routing and assignment rules supplied per workflow, so our scenario is one application of a reusable engine.
 
 ### 7. History, Monitoring and Versioning
 Workflow history serves as the chronological, event driven, append only log of all runtime events including state transitions across task lifecycles which provides the foundation for durable execution, crash recovery, and state replay. As a core component of history, audit information captures standardized system events, participant interactions, and execution data using the WfMC Interface 5 Common Workflow Audit Data (CWAD) prefix/suffix framework for legal compliance and accountability, extracted via push/pull ETL pipelines into structured relational tables while maintaining a strict physical separation between volatile runtime databases and immutable history streams to prevent performance degradation. Parallel to history, workflow versioning manages process blueprint evolution by enforcing in flight instance isolation guaranteeing that active, long running workflow instances complete safely on their originating definition version while new executions launch on the updated version, thereby preventing schema mismatches and preserving audit trail integrity. Finally, workflow monitoring provides the real time operational analysis and visual representation of active process instances during runtime, empowering administrators to detect bottlenecks, adjust running instance behavior dynamically, and enhance organizational responsiveness when handling customer status inquiries (such as determining who is processing a specific work item).
@@ -42,3 +43,6 @@ Workflow history serves as the chronological, event driven, append only log of a
 ### References
 
 Russell, N., ter Hofstede, A.H.M., Edmond, D. and van der Aalst, W.M.P., 2004. Workflow Resource Patterns. Technische Universiteit Eindhoven. Available at: https://pure.tue.nl/ws/files/1984893/591788.pdf
+Workflow Management Coalition (1998). The Workflow Reference Model. http://www.workflowpatterns.com/documentation/documents/tc003v11.pdf 
+Camunda. Glossary, Camunda 8 Docs. https://docs.camunda.io/docs/reference/glossary 
+Microsoft. Use connector actions in desktop flows, Microsoft Learn. https://learn.microsoft.com/en-us/power-automate/desktop-flows/how-to/use-connector-actions
