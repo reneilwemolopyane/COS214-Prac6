@@ -31,7 +31,7 @@ Approval is a normal state in a workflow, not an error: the workflow pauses unti
 
 ### 5. Events and Failures
 
- A workflow system has to react to events such as a task finishing, a deadline passing, a message arriving or an error occurring. Russell, van der Aalst and ter Hofstede (2006) identify five types of exception: work item failure, deadline expiry, resource unavailability, external triggers and constraint violations. Each must be handled at the work-item level, at the whole-case level and with a recovery action such as rollback or compensation. Planning ahead matters, because unexpected exceptions slow processes down significantly more than expected ones (Dijkman et al., 2019). Modern engines therefore build failure handling into the workflow definition: temporary failures are retried automatically, business errors are sent down an alternative path, completed work can be undone through compensation, and failures that still can't be resolved raise an incident for a person to fix (Camunda, 2025; Temporal Technologies, 2026). Handlers can even be chosen at runtime based on the situation (Adams et al., 2007). For TIVIDY, this means failure rules belong to the workflow definition, while retry attempts, actual errors and open incidents belong to each running instance.
+ A workflow system must react to events such as completed tasks, expired deadlines and errors, which Russell, van der Aalst and ter Hofstede (2006) group into five exception types: work item failure, deadline expiry, resource unavailability, external triggers and constraint violations. They show that each exception must be handled at three levels: the individual work item, the whole case, and a recovery action such as rollback or compensation. Modern engines put this into practice by retrying temporary failures automatically, sending business errors down an alternative path, and raising an incident for a person to fix once retries run out, so that no failure goes unnoticed (Camunda, 2025). For TIVIDY, this means failure-handling rules belong to the workflow definition, while retry attempts, actual errors and open incidents belong to each running instance.
 
 
 ### 6. Integration and Reusability
@@ -54,3 +54,8 @@ Schiefer, J., Jeng, J.J. and Bruckner, R.M., 2003, September. Real-time workflow
 Koksal, P., Arpinar, S.N. and Dogac, A., 1998. Workflow history management. ACM Sigmod Record, 27(1), pp.67-75.
 Rolfe, P.A., 2001. Code versioning in a workflow management system (Doctoral dissertation, Massachusetts Institute of Technology).
 https://docs.camunda.io/docs/components/best-practices/operations/versioning-process-definitions/
+
+
+Camunda (2025) Dealing with problems and exceptions. Camunda 8 Documentation. Available at: https://docs.camunda.io/docs/components/best-practices/development/dealing-with-problems-and-exceptions/
+
+Russell, N., van der Aalst, W.M.P. and ter Hofstede, A.H.M. (2006) 'Workflow exception patterns', in Advanced Information Systems Engineering (CAiSE 2006). Lecture Notes in Computer Science, vol. 4001. Berlin: Springer, pp. 288–302. Available at: https://doi.org/10.1007/11767138_20
