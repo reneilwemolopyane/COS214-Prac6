@@ -1,3 +1,4 @@
+#pragma once
 #include <vector>
 #include "tividy/core/WorkflowInstance.h"
 /** @brief Registers/starts instances. STUB */
