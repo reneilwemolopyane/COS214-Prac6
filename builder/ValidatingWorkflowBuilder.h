@@ -6,7 +6,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "WorkflowBuilder.h"
+#include "tividy/builder/WorkflowBuilder.h"
 
 /**
  * @file ValidatingWorkflowBuilder.h
