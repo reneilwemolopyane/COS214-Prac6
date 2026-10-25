@@ -1,22 +1,47 @@
 #pragma once
 #include <vector>
-#include "tividy/core/Participant.h"
-#include "tividy/mediator/Mediator.h"
+#include "Participant.h"
+#include "Mediator.h"
+#include <string>
 class WorkItem;
 /** @file Strategy.h  Strategy: AssignmentStrategy + concretes + WorkAssigner (Context). STUB */
 class AssignmentStrategy {
-public:
-    virtual ~AssignmentStrategy() {}
-    virtual Participant* select(const WorkItem& item, const std::vector<Participant*>& pool) = 0;
+  public:
+    virtual ~Strategy() {}
+    virtual Participant* select(const WorkItem& item, const std::vector<Participant*>&) = 0;
+    virtual Strategy* clone()const = 0;
+    virtual std::string name()const = 0;
 };
-class RoleBasedStrategy : public AssignmentStrategy {
-public: Participant* select(const WorkItem&, const std::vector<Participant*>&) { return 0; } };  // TODO
-class ShortestQueueStrategy : public AssignmentStrategy {
-public: Participant* select(const WorkItem&, const std::vector<Participant*>&) { return 0; } };  // TODO
-class RoundRobinStrategy : public AssignmentStrategy {
-public: Participant* select(const WorkItem&, const std::vector<Participant*>&) { return 0; } };  // TODO
-class DataRuleStrategy : public AssignmentStrategy {
-public: Participant* select(const WorkItem&, const std::vector<Participant*>&) { return 0; } };  // TODO
+class RoleBasedStrategy : public AssignmentStrategy{
+  public: 
+    Participant* select(const WorkItem&, const std::vector<Participant*>&)override;
+    Strategy* clone()const override;
+    std::string name()const;
+}
+class ShortestQueueStrategy : public AssignmentStrategy{
+  public: 
+    Participant* select(const WorkItem&, const std::vector<Participant*>&)override;
+    Strategy* clone()const override;
+    std::string name()const;
+}
+class RoundRobinStrategy : public AssignmentStrategy{
+  private:
+    int lastIndex;
+  public:
+    RoundRobinStrategy() : lastIndex(-1){}
+    Participant* select(const WorkItem&, const std::vector<Participant*>&)override;
+    Strategy* clone()const override;
+    std::string name()const;
+}
+class DataRuleStrategy : public AssignmentStrategy{
+  private:
+    std::string dataKey; //e.g "claimtype" or "faculty"
+  public: 
+    Participant* select(const WorkItem&, const std::vector<Participant*>&)override;
+    Strategy* clone()const override;
+    std::string name()const;
+}
+
 
 class WorkAssigner : public WorkflowColleague {
 public:
