@@ -22,7 +22,7 @@ public:
 
     void buildDependency(const std::string& from, const std::string& to) override;
 
-    void buildRule(const DataMap& rule) override;
+    void buildRule(const std::string& name, const std::string& value) override;
 
     /// Returns the (unvalidated) draft; never throws for incomplete input.
     WorkflowDefinition* getResult() override;

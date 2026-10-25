@@ -20,5 +20,5 @@ void WorkflowDirector::construct(WorkflowBuilder& builder) {
 
     builder.buildDependency("Review request", "Record decision");
     
-    builder.buildRule(Rule("A reviewer must record the decision"));
+    builder.buildRule("review.decisionRequired", "true");
 }

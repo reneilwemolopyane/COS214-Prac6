@@ -6,9 +6,11 @@
 #include <utility>
 #include <vector>
 #include "tividy/core/Common.h"
-#include "tividy/composite_prototype/WorkflowComponent.h"
+#include "tividy/composite_prototype/WorkComponent.h"
 #include "tividy/core/WorkflowInstance.h"
 
+class WorkflowInstance;
+class WorkComponent;
 /**
  * @file WorkflowDefinition.h
  * @brief The reusable template of a process.
@@ -57,10 +59,10 @@ public:
     const std::vector<std::pair<std::string, std::string> >& getDependencies() const;
 
     /// Attach a routing/approval rule.
-    void addRule(const DataMap& rule);
+    void addRule(const std::string& name, const std::string& value)
     /// @return All attached rules.
     
-    const std::vector<Rule>& getRules() const;
+    const DataMap& getRules() const;
 
 private:
 

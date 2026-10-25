@@ -18,12 +18,10 @@ void DraftWorkflowBuilder::buildDependency(const std::string& from, const std::s
     product->addDependency(from, to);
 }
 
-void DraftWorkflowBuilder::buildRule(const Rule& rule) { 
+void DraftWorkflowBuilder::buildRule(const std::string& name, const std::string& value) {
     
-    product->addRule(rule); 
-
+    product->addRule(name, value);
 }
-
 WorkflowDefinition* DraftWorkflowBuilder::getResult() { 
     
     return release(); 

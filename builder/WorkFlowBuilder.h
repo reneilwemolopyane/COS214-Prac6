@@ -5,8 +5,10 @@
 #include <string>
 #include "tividy/core/Common.h"
 #include "tividy/builder/WorkflowDefinition.h"
+#include "tividy/"
 
 class Stage;
+class WorkflowDefinition;
 
 /**
  * @file WorkflowBuilder.h
@@ -42,7 +44,7 @@ public:
     virtual void buildDependency(const std::string& from, const std::string& to) = 0;
 
     /// Attach a rule to the definition.
-    virtual void buildRule(const DataMap& rule) = 0;
+    virtual void buildRule(const std::string& name, const std::string& value) = 0;
 
     /// Hand over the finished definition (and reset the builder).
     virtual WorkflowDefinition* getResult() = 0;
