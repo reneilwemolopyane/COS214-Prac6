@@ -5,9 +5,9 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "Common.h"
-#include "WorkComponent.h"
-#include "WorkflowInstance.h"
+#include "tividy/core/Common.h"
+#include "tividy/composite_prototype/WorkflowComponent.h"
+#include "tividy/core/WorkflowInstance.h"
 
 /**
  * @file WorkflowDefinition.h

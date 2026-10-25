@@ -4,7 +4,7 @@
 #include <map>
 #include <memory>
 #include <string>
-#include "WorkflowDefinition.h"
+#include "tividy/builder/WorkflowDefinition.h"
 
 /**
  * @file DefinitionRepository.h

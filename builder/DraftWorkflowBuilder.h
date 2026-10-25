@@ -1,7 +1,7 @@
 #ifndef DRAFTWORKFLOWBUILDER_H
 #define DRAFTWORKFLOWBUILDER_H
 
-#include "WorkflowBuilder.h"
+#include "tividy/builder/WorkflowBuilder.h"
 
 /**
  * @file DraftWorkflowBuilder.h

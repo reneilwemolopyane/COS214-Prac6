@@ -3,8 +3,8 @@
 
 #include <memory>
 #include <string>
-#include "Common.h"
-#include "WorkflowDefinition.h"
+#include "tividy/core/Common.h"
+#include "tividy/builder/WorkflowDefinition.h"
 
 class Stage;
 

@@ -3,9 +3,9 @@
 
 #include <memory>
 #include <string>
-#include "DefinitionRepository.h"
-#include "Common.h"
-#include "WorkflowEngine.h"
+#include "tividy/facade/DefinitionRepository.h"
+#include "tividy/builder/WorkflowDefinition.h"
+#include "tividy/command/WorkflowEngine"
 
 /**
  * @file WorkflowFacade.h

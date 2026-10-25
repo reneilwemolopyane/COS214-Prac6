@@ -1,8 +1,8 @@
 #ifndef WORKFLOWDIRECTOR_H
 #define WORKFLOWDIRECTOR_H
 
-#include "WorkflowBuilder.h"
-
+#include "tividy/builder/WorkflowBuilder.h"
+#include "tividy/core/Common.h"
 /**
  * @file WorkflowDirector.h
  * @brief Director: knows the ORDER of build steps for one process.
