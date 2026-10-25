@@ -69,9 +69,17 @@ void ValidatingWorkflowBuilder::buildDependency(const std::string& from, const s
     product->addDependency(from, to);
 }
 
-void ValidatingWorkflowBuilder::buildRule(const Rule& rule) {
+void ValidatingWorkflowBuilder::buildRule(const std::string& name, const std::string& value) {
 
-    product->addRule(rule);
+    if (name.empty()) {
+        throw std::invalid_argument("Rule name must not be empty");
+    }
+
+    if (product->getRules().count(name) != 0) {
+        throw std::invalid_argument("Duplicate rule name: " + name);
+    }
+    
+    product->addRule(name, value);
 }
 
 

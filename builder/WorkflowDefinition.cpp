@@ -13,7 +13,7 @@ WorkflowInstance* WorkflowDefinition::createInstance(const DataMap& data) {
 
     ++instanceCounter;
 
-    std::string instanceId = id_ + "-" + std::to_string(instanceCounter);
+    std::string instanceId = id + "-" + std::to_string(instanceCounter);
 
     return WorkflowInstance*(new WorkflowInstance(instanceId, std::move(copy), data, version));
 }
@@ -68,13 +68,12 @@ const std::vector<std::pair<std::string, std::string> >& WorkflowDefinition::get
     return dependencies;
 }
 
-void WorkflowDefinition::addRule(const DataMap& rule) { 
-
-    rules.push_back(rule); 
-
+void WorkflowDefinition::addRule(const std::string& name, const std::string& value) const{
+    
+    rules[name] = value;
 }
 
-const std::vector<Rule>& WorkflowDefinition::getRules() const { 
+const DataMap& WorkflowDefinition::getRules() const { 
     
     
     return rules;

@@ -31,7 +31,7 @@ public:
     /// @throws std::invalid_argument if either item is unknown or an item depends on itself.
     void buildDependency(const std::string& from, const std::string& to) override;
 
-    void buildRule(const DataMap& rule) override;
+    void buildRule(const std::string& name, const std::string& value) override;
 
     /// @throws std::runtime_error if there are no items, an item has no role, or dependencies form a cycle.
     WorkflowDefinition* getResult() override;
