@@ -1,29 +1,81 @@
-#pragma once
+#ifndef WORKFLOWDEFINITION_H
+#define WORKFLOWDEFINITION_H
+
+#include <memory>
 #include <string>
-#include "tividy/composite_prototype/WorkflowComponent.h"
-#include "tividy/core/Common.h"
-class WorkflowInstance;
-/** @brief Product (Builder) + Prototype client. STUB */
+#include <utility>
+#include <vector>
+#include "Common.h"
+#include "WorkComponent.h"
+#include "WorkflowInstance.h"
 
+/**
+ * @file WorkflowDefinition.h
+ * @brief The reusable template of a process.
+ *
+ * GoF roles: Product (Builder) and Client (Prototype).
+ *
+ * A definition owns a template tree of WorkComponent objects. It never runs;
+ * createInstance() deep-copies the template so every WorkflowInstance owns its
+ * own independent structure.
+ */
 class WorkflowDefinition {
-
 public:
-    WorkflowDefinition(const std::string& id = "", int version = 1) : id(id), version(version), root(0) {}
+    /**
+     * @brief Create an empty, not-yet-validated definition.
+     * @param id      Unique identifier, e.g. "motor-claim".
+     * @param version Definition version number.
+     */
+    WorkflowDefinition(const std::string& id, int version);
 
-    void setRoot(WorkflowComponent*) {}  // TODO
+    /**
+     * @brief Create a new, independent instance by cloning the template (Prototype).
+     * @param data Data payload for the new instance.
+     * @return The new instance; the caller owns it.
+     * @throws std::logic_error if the definition has no structure yet.
+     */
+    WorkflowInstance* createInstance(const DataMap& data);
 
-    WorkflowInstance* createInstance(const DataMap& data);  // TODO: see src/builder
+    /// @return The definition id.
+    std::string getId() const;
+    /// @return The definition version.
+    int getVersion() const;
+    /// @return true only if a validating builder produced this definition.
+    bool isValidated() const;
 
-    std::string getId() const { return id; }
+    /// Take ownership of the template root (called by builders).
+    void setRoot(WorkComponent* root);
+    /// Mark the definition as validated (called by the validating builder).
+    void markValidated();
 
-    int getVersion() const { return version; }
+    /// @return The template root (read only), or nullptr if none.
+    const WorkComponent* getRoot() const;
+
+    /// Record that @p to may only start after @p from has finished.
+    void addDependency(const std::string& from, const std::string& to);
+    /// @return All recorded (from, to) dependencies.
+    const std::vector<std::pair<std::string, std::string> >& getDependencies() const;
+
+    /// Attach a routing/approval rule.
+    void addRule(const DataMap& rule);
+    /// @return All attached rules.
+    const std::vector<Rule>& getRules() const;
+
+private:
+
+    std::string id;
+
+    int version;
+
+    bool validated;
+
+    WorkComponent* root;
+
+    std::vector<std::pair<std::string, std::string> > dependencies;
 
     DataMap rules;
 
-private:
-    std::string id;
-    
-    int version; 
-    
-    WorkflowComponent* root;
+    int instanceCounter;
 };
+
+#endif
