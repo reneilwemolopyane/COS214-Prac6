@@ -59,6 +59,7 @@ public:
     /// Attach a routing/approval rule.
     void addRule(const DataMap& rule);
     /// @return All attached rules.
+    
     const std::vector<Rule>& getRules() const;
 
 private:
