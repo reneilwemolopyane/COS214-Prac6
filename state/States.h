@@ -1,14 +1,76 @@
 #pragma once
-/** @file States.h  ConcreteStates. STUB: transitions TODO (see Task 6 state diagram). */
+#include <string>
 #include "tividy/state/WorkItemState.h"
-#define TIVIDY_STATE(C, N) class C : public WorkItemState { public: std::string name() const { return N; } /* TODO transitions */ };
-TIVIDY_STATE(CreatedState,   "Created")
-TIVIDY_STATE(AvailableState, "Available")
-TIVIDY_STATE(AssignedState,  "Assigned")
-TIVIDY_STATE(InProgressState,"InProgress")
-TIVIDY_STATE(SuspendedState, "Suspended")
-TIVIDY_STATE(EscalatedState, "Escalated")
-TIVIDY_STATE(CompletedState, "Completed")   // final
-TIVIDY_STATE(RejectedState,  "Rejected")    // final
-TIVIDY_STATE(CancelledState, "Cancelled")   // final
-#undef TIVIDY_STATE
+
+class WorkItem;
+
+class CreatedState : public WorkItemState {
+public:
+    std::string name() const;
+    static WorkItemState* instance();
+    void makeAvailable(WorkItem&);
+    void cancel(WorkItem&);
+};
+
+class AvailableState : public WorkItemState {
+public:
+    std::string name() const;
+    static WorkItemState* instance();
+    void assign(WorkItem&);
+    void cancel(WorkItem&);
+};
+
+class AssignedState : public WorkItemState {
+public:
+    std::string name() const;
+    static WorkItemState* instance();
+    void assign(WorkItem&);   // AMENDMENT: reassignment stays Assigned
+    void start(WorkItem&);
+    void cancel(WorkItem&);
+    void escalate(WorkItem&);
+};
+
+class InProgressState : public WorkItemState {
+public:
+    std::string name() const;
+    static WorkItemState* instance();
+    void complete(WorkItem&);
+    void reject(WorkItem&);
+    void cancel(WorkItem&);
+    void suspend(WorkItem&);
+};
+
+class SuspendedState : public WorkItemState {
+public:
+    std::string name() const;
+    static WorkItemState* instance();
+    void cancel(WorkItem&);   // AMENDMENT: allow cancel from Suspended
+    void resume(WorkItem&);
+};
+
+class EscalatedState : public WorkItemState {
+public:
+    std::string name() const;
+    static WorkItemState* instance();
+    void start(WorkItem&);
+    void complete(WorkItem&);
+    void cancel(WorkItem&);
+};
+
+class CompletedState : public WorkItemState {
+public:
+    std::string name() const;
+    static WorkItemState* instance();
+};
+
+class RejectedState : public WorkItemState {
+public:
+    std::string name() const;
+    static WorkItemState* instance();
+};
+
+class CancelledState : public WorkItemState {
+public:
+    std::string name() const;
+    static WorkItemState* instance();
+};
