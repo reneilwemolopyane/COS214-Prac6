@@ -1,7 +1,18 @@
 #include "AssignmentStrategy.h"
-
+#include "WorkItem.h"
+#include "Participant.h"
 
 AssignmentStrategy::~AssignmentStrategy(){}
+
+std::vector<Participant*> AssignmentStrategy::eligible(const WorkItem& item, const std::vector<Participant*>& candidates)const{
+    std::vector<Participant*> ok;
+    for (size_t i = 0; i < candidates.size(); i++){
+        if (candidates[i]->hasRole(item.getRequiredRole())){
+            ok.push_back(candidates[i]);
+        }
+    }
+    return ok;
+}
 
 //Role based Strategy
 Participant* RoleBasedStrategy::selectParticipant(const WorkItem&, const std::vector<Participant*>& candidates){
@@ -42,4 +53,25 @@ AssignmentStrategy* RoundRobinStrategy::clone()clone{
 }
 std::string RoundRobinStrategy::name()const{
     return "RoundRobin";
+}
+
+//Data rule
+void DataRuleStrategy::addMapping(const std::string& value, const std::string& role){
+    roleByValue[value] = role;
+}
+
+Participant* DataRuleStrategy::selectParticipant(const WorkItem& item, const std::vector<Participant*>& candidates){
+    std::map<std::string, std::string>::const_iterator it = roleByValue.find(item.getData(dataKey));
+    if (it == roleByValue.end()) return nullptr;
+    for (size_t i = 0; i < candidates.size(); i++){
+        if (candidates[i]->hasRole(it->second)) return candidates[i];
+    }
+    return nullptr;
+}
+AssignmentStrategy* DataRuleStrategy::clone()const{
+    return new DataRuleStrategy(*this);
+}
+
+std::string DataRuleStrategy::name() const{
+    return "DataRule(" + dataKey + ")";
 }
