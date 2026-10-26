@@ -19,5 +19,5 @@ WorkflowDefinition* DefinitionRepository::find(const std::string& id) const {
 
     std::map<std::string, WorkflowDefinition* >::const_iterator it = definitions.find(id);
 
-    return it == definitions.end() ? nullptr : it->second.get();
+    return it == definitions.end() ? nullptr : it->second;
 }
