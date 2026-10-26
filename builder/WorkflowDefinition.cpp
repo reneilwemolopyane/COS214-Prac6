@@ -1,21 +1,25 @@
-#include "WorkflowDefinition.h"
+#include "tividy/builder/WorkflowDefinition.h"
 #include <stdexcept>
 
 WorkflowDefinition::WorkflowDefinition(const std::string& id, int version)
     : id(id), version(version), validated(false), instanceCounter(0) {}
 
 WorkflowInstance* WorkflowDefinition::createInstance(const DataMap& data) {
+
     if (!root) {
-        throw std::logic_error("Definition '" + id + "' has no structure to instantiate");
+        throw std::logic_error(
+            "Definition '" + id + "' has no structure to instantiate"
+        );
     }
-    // Prototype: deep copy of the template. clone() returns a raw pointer we now own.
-    WorkComponent* root->clone();
+
+    // Deep copy of the template
+    WorkComponent* copy = root->clone();
 
     ++instanceCounter;
 
     std::string instanceId = id + "-" + std::to_string(instanceCounter);
 
-    return WorkflowInstance*(new WorkflowInstance(instanceId, std::move(copy), data, version));
+    return new WorkflowInstance(instanceId, std::move(copy), data, version);
 }
 
 std::string WorkflowDefinition::getId() const{ 
@@ -68,7 +72,7 @@ const std::vector<std::pair<std::string, std::string> >& WorkflowDefinition::get
     return dependencies;
 }
 
-void WorkflowDefinition::addRule(const std::string& name, const std::string& value) const{
+void WorkflowDefinition::addRule(const std::string& name, const std::string& value){
     
     rules[name] = value;
 }

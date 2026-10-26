@@ -59,7 +59,7 @@ public:
     const std::vector<std::pair<std::string, std::string> >& getDependencies() const;
 
     /// Attach a routing/approval rule.
-    void addRule(const std::string& name, const std::string& value)
+    void addRule(const std::string& name, const std::string& value);
     /// @return All attached rules.
     
     const DataMap& getRules() const;

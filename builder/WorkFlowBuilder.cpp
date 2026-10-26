@@ -1,6 +1,6 @@
 #include "WorkflowBuilder.h"
-#include "Stage.h"
-#include "WorkItem.h"
+#include "tividy/composite_prototype/Stage.h"
+#include "tividy/command/WorkItem.h"
 
 WorkflowBuilder::WorkflowBuilder()
     : rootStage(nullptr), currentStage(nullptr), id("unnamed"), version(1) {

@@ -5,7 +5,7 @@
 #include <string>
 #include "tividy/facade/DefinitionRepository.h"
 #include "tividy/builder/WorkflowDefinition.h"
-#include "tividy/command/WorkflowEngine"
+#include "tividy/command/WorkflowEngine.h"
 
 /**
  * @file WorkflowFacade.h
