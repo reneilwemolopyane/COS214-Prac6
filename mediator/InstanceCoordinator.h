@@ -1,7 +1,70 @@
 #pragma once
-#include "tividy/mediator/Mediator.h"
-/** @brief ConcreteMediator: one per WorkflowInstance. Holds dependency state. STUB */
-class InstanceCoordinator : public WorkflowMediator {
-public:
-    void notify(WorkflowColleague*, const WorkflowEvent&) {}  // TODO: dependency checks, makeAvailable, assign
+#include <set>
+#include <string>
+#include <vector>
+#include "ExternalConnector.h"
+#include "WorkflowMediator.h"
+
+class WorkItem;
+class Participant;
+class WorkAssigner;
+class WorkflowSubject;
+class ConnectorRegistry;
+
+/** @brief One prerequisite link: `item` cannot start until `prerequisite` is completed. */
+struct Dependency {
+    std::string item;
+    std::string prerequisite;
 };
+
+/** @brief ConcreteMediator: one per WorkflowInstance. Holds dependency state. 
+ * Holds the instance's dependency state, decides what an event means
+ * (release next items, fail, escalate) and publishes events to observers.
+ * It owns nothing: items, participants and collaborators belong to
+ * WorkflowInstance or the caller
+*/
+
+class InstanceCoordinator : public WorkflowMediator{
+    private:
+       WorkItem* findItem(const std::string& id) const;
+       void handleCompleted(const std::string& id);
+       void handleRejection(const std::string& id);    
+       void handleEscalation(const std::string& id);   
+       void publish(const WorkflowEvent& e) const;
+
+       std::vector<WorkItem*> items;
+       std::vector<Dependency> dependencies;       
+       std::vector<std::string> completedItems;    
+       std::vector<Participant*> pool;             
+       WorkAssigner* assigner;
+       WorkflowSubject* events; 
+       ConnectorRegistry* connectors;                           
+public:
+    InstanceCoordinator(WorkAssigner* a, Subject* s);
+    ~InstanceCoordinator();
+    InstanceCoordinator& operator=(const InstanceCoordinator&) = delete;
+
+    /** @brief Mediator entry point: publish first, then react */
+
+    void notify(Colleague* sender, WorkflowEvent event, const std::string& itemId) override;
+
+    /** @brief Adds an item and makes this coordinator its mediator. @return false if null or duplicate id */
+    void registerItem(WorkItem* item);          
+    void addDependency(const std::string& item, const std::string& prerequisite); 
+    void addParticipant(Participant* p);
+
+    /** @brief Publishes CREATED and releases every item with no open prerequisites. */
+    void start();
+    bool dependenciesMet(const std::string& itemId) const;
+    void releaseAvailableItems();
+    std::vector<WorkItem*> getAvailableItems() const;  
+    bool allCompleted()const;
+
+    /**
+     * @brief Calls an external system through the Adapter registry.
+     * Retries retryable failures up to maxAttempts, then escalates the item.
+     * @return true if the call succeeded.
+     */
+    bool callExternal(const std::string& connectorKey, const ConnectorRequest& request,  ConnectorResult& out, int maxAttempts = 3);
+};
+
