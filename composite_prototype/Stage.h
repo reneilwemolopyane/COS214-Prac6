@@ -1,24 +1,31 @@
 #pragma once
 #include <vector>
+#include <cstddef>
 #include "tividy/composite_prototype/WorkflowComponent.h"
 #include "tividy/core/Common.h"
-/** @brief Composite: groups children; SubProcess = nested Stage. STUB */
+
 class Stage : public WorkflowComponent {
 public:
-    explicit Stage(const std::string& name = "", ExecutionMode m = SEQUENTIAL) : name(name), mode(m) {}
-    void add(WorkflowComponent*) {}                 // TODO
-    void start() {}                                 // TODO sequential/parallel
-    void complete() {}                              // TODO
-    void cancel() {}                                // TODO
-    bool isComplete() const { return false; }       // TODO
-    WorkflowComponent* clone() const { return 0; }  // TODO deep copy
-    std::string getName() const { return name; }
-    void accept(WorkflowVisitor&) {}                // TODO traverse children
+    explicit Stage(const std::string& name = "", ExecutionMode m = SEQUENTIAL);
+    ~Stage();
+    void add(WorkflowComponent*);
+    void start();
+    void complete();
+    void cancel();
+    bool isComplete() const;
+    WorkflowComponent* clone() const;
+    std::string getName() const;
+    void accept(WorkflowVisitor&);
 protected:
-    std::string name; ExecutionMode mode; std::vector<WorkflowComponent*> children;
+    std::string name;
+    ExecutionMode mode;
+    std::vector<WorkflowComponent*> children;
+    std::size_t cursor;
+    bool cancelled;
 };
+
 class SubProcess : public Stage {
 public:
-    explicit SubProcess(const std::string& n = "") : Stage(n, SEQUENTIAL) {}
-    WorkflowComponent* clone() const { return 0; }  // TODO
+    explicit SubProcess(const std::string& n = "");
+    WorkflowComponent* clone() const;
 };
