@@ -7,7 +7,7 @@
 class AuditReportVisitor : public WorkflowVisitor {
 public:
     void visitState(const WorkItemState& state) override;
-    void visitHandler(const ChainOfResponsibilityElement& handler) override;
+    void visitHandler(const ApprovalHandler& handler) override;
     void visitCommand(const WorkflowCommand& command) override;
     void visitProcessDataStore(ProcessDataStore& data) override;
 };

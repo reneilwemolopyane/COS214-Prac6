@@ -5,7 +5,7 @@
 #include <iostream>
 
 class WorkItemState;
-class ChainOfResponsibilityElement;
+class ApprovalHandler;
 class ProcessDataStore;
 class WorkflowCommand;
 
@@ -18,7 +18,7 @@ class WorkflowVisitor {
 public:
     virtual ~WorkflowVisitor() {}
     virtual void visitState(const WorkItemState& state) = 0;
-    virtual void visitHandler(const ChainOfResponsibilityElement& handler) = 0;
+    virtual void visitHandler(const ApprovalHandler& handler) = 0;
     virtual void visitCommand(const WorkflowCommand& command) = 0;
     virtual void visitProcessDataStore(ProcessDataStore& data) = 0;
 };

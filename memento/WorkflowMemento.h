@@ -1,5 +1,5 @@
 #ifndef WORKFLOWMEMENTO_H
-#define WORKFOWMEMENTO_H
+#define WORKFLOWMEMENTO_H
 
 //memento
 
@@ -21,7 +21,7 @@ class WorkflowMemento {
     std::string getVersion() const;
     WorkItemState* getState() const;
     std::string getStateName() const;
-    std::chrono::system_clock::time_point WorkflowMemento::getTimestamp() const;
+    std::chrono::system_clock::time_point getTimestamp() const;
     std::string getTimestampString() const; 
 
     private:

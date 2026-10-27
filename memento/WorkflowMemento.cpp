@@ -1,4 +1,5 @@
 #include "WorkflowMemento.h"
+#include "tividy/state/WorkItemState.h"
 
 #include <ctime>
 
@@ -20,14 +21,14 @@ std::chrono::system_clock::time_point WorkflowMemento::getTimestamp() const {
    return timestamp; 
 }
 //function to return the timestamp in year month date and time
-std::string getTimestampString() const{
+std::string WorkflowMemento::getTimestampString() const {
    //converting to classic time type
    std::time_t time_now=std::chrono::system_clock::to_time_t(timestamp);
    //converting to calendar time structure directly
-   std::tm* local_time=std::locatime(&time_now);
+    std::tm* local_time = std::localtime(&time_now);
    char buffer[80];
    //format the calendar numbers directly into standard text
-   std::strftime(buffer,sizeof(buffer),"%Y-%m-%d %H:%M:%S", local_time)
+    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", local_time);
 
    return std::string(buffer);
 
