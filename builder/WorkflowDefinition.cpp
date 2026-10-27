@@ -13,7 +13,7 @@ WorkflowInstance* WorkflowDefinition::createInstance(const DataMap& data) {
     }
 
     // Deep copy of the template
-    WorkComponent* copy = root->clone();
+    WorkflowComponent* copy = root->clone();
 
     ++instanceCounter;
 
@@ -40,7 +40,7 @@ bool WorkflowDefinition::isValidated() const{
 
 }
 
-void WorkflowDefinition::setRoot(WorkComponent* root){ 
+void WorkflowDefinition::setRoot(WorkflowComponent* root){ 
     
     //What is move??
     //this->root = std::move(root);
@@ -54,7 +54,7 @@ void WorkflowDefinition::markValidated(){
 
 }
 
-const WorkComponent* WorkflowDefinition::getRoot() const { 
+const WorkflowComponent* WorkflowDefinition::getRoot() const { 
      //get()??
     //return root.get(); 
 
