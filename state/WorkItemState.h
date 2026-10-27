@@ -18,6 +18,7 @@ public:
     virtual void escalate(WorkItem& i);
     virtual void suspend(WorkItem& i);
     virtual void resume(WorkItem& i);
+    virtual void reopen(WorkItem& i);
 
     virtual bool isFinal() const { return false; }
     virtual bool isCreated() const { return false; }

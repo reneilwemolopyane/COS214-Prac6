@@ -45,6 +45,7 @@ void SuspendedState::resume(WorkItem& i) { i.setState(InProgressState::instance(
 // ---- Final states: all operations inherited from base -> throw ----
 std::string CompletedState::name() const { return "Completed"; }
 WorkItemState* CompletedState::instance() { static CompletedState s; return &s; }
+void CompletedState::reopen(WorkItem& i) { i.setState(InProgressState::instance()); }
 std::string RejectedState::name() const { return "Rejected"; }
 WorkItemState* RejectedState::instance() { static RejectedState s; return &s; }
 std::string CancelledState::name() const { return "Cancelled"; }

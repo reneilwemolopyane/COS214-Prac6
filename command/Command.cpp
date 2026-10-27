@@ -6,6 +6,7 @@
 #include "composite_prototype/WorkItem.h"
 #include "core/Participant.h"
 #include "adapter/ExternalConnector.h"
+#include <stdexcept>
 
 AssignWorkItemCommand::AssignWorkItemCommand(WorkItem* item, Participant* assignee, const std::string& issuedBy)
     : WorkflowCommand(item ? item->getName() : "", issuedBy), item(item), assignee(assignee), previous(0) {}
@@ -17,12 +18,23 @@ bool AssignWorkItemCommand::execute() {
     }
     // Remember who had it before, so undo() can give it back.
     previous = item->getAssignee();
-    item->assign(assignee);
+    try {
+        item->assign(assignee);
+    } catch (const std::exception& e) {
+        error = e.what();
+        return false;
+    }
     return item->getAssignee() == assignee;
 }
 
 void AssignWorkItemCommand::undo() {
-    if (item) item->assign(previous);
+    if (!item) return;
+    try {
+        if (previous) item->assign(previous);
+        else item->releaseAssignee();
+    } catch (const std::exception& e) {
+        error = e.what();
+    }
 }
 
 CompleteWorkItemCommand::CompleteWorkItemCommand(WorkItem* item, const std::string& outcome, const std::string& issuedBy)
@@ -33,12 +45,22 @@ bool CompleteWorkItemCommand::execute() {
         error = "missing work item";
         return false;
     }
-    item->complete(outcome);
+    try {
+        item->complete(outcome);
+    } catch (const std::exception& e) {
+        error = e.what();
+        return false;
+    }
     return item->getOutcome() == outcome;
 }
 
 void CompleteWorkItemCommand::undo() {
-    if (item) item->reopen();
+    if (!item) return;
+    try {
+        item->reopen();
+    } catch (const std::exception& e) {
+        error = e.what();
+    }
 }
 
 InvokeServiceCommand::InvokeServiceCommand(ExternalConnector* connector, const ConnectorRequest& request,
