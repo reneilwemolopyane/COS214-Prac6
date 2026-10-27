@@ -11,9 +11,9 @@
 class MessagingAdapter : public ExternalConnector {
 public:
     MessagingAdapter(const std::string& name, MessagingAPI* api) : n(name), adaptee(api) {}
-    std::string name() const { return n; }
+    std::string name() const override { return n; }
     /** @brief Translates a "send" request into MessagingAPI::send() and the reply into a ConnectorResult. */
-    ConnectorResult execute(const ConnectorRequest& request);
+    ConnectorResult execute(const ConnectorRequest& request) override;
 private:
     std::string n; MessagingAPI* adaptee;
 };
