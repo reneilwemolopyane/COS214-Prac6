@@ -1,0 +1,8 @@
+*.lck
+*.bak_*
+.lock
+*.lck
+*.bak_*
+.vpprefdata/
+teamworkUser.xml
+teamwork_client/
