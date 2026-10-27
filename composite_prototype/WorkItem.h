@@ -7,47 +7,44 @@
 class WorkItem : public WorkflowComponent, public WorkflowColleague {
 public:
     explicit WorkItem(const std::string& name = "");
-    ~WorkItem();
+    ~WorkItem() override;
 
     
     void makeAvailable();
     void assign();
     void assign(Participant* p);
-    void start();
-    void complete();
+    void start() override;
+    void complete() override;
+    void reject(const std::string& reason);
+    void cancel() override;
+    void escalate(const std::string& reason);
     void suspend();
     void resume();
 
-
-    void reject(const std::string& reason);
-    void escalate(const std::string& reason);
-    void cancel();
+    
+    void activate() override;
+    bool isComplete() const override;
+    bool isFinished() const override;
+    bool isFailed() const override;
+    WorkflowComponent* clone() const override;
+    std::string getName() const override;
+    void accept(WorkflowVisitor& v) override;
 
     
     bool isPending() const;
     bool isAvailable() const;
-    bool isComplete() const;
-    bool isFinished() const;
-    bool isFailed() const;
-
-    // Component Overrides
-    void activate() override;
-    WorkflowComponent* clone() const override;
-    std::string getName() const override;
-    void accept(WorkflowVisitor&) override;
+    std::string getStateName() const;
+    const WorkItemState* getState() const;
 
     
-    void setState(WorkItemState* s);
-    const WorkItemState* getState() const;
-    std::string getStateName() const;
-
     std::string getId() const { return id; }
     std::string getRole() const { return role; }
     Participant* getAssignee() const { return assignee; }
     
-private:
+    void setState(WorkItemState* s);
     void releaseAssignee();
 
+private:
     std::string id;
     std::string name;
     std::string role;
