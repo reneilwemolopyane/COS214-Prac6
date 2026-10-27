@@ -13,9 +13,9 @@
 class PaymentAdapter : public ExternalConnector {
 public:
     PaymentAdapter(const std::string& name, PaymentAPI* api) : n(name), adaptee(api) {}
-    std::string name() const { return n; }
+    std::string name() const override{ return n; }
     /** @brief Translates a generic request into PaymentAPI calls and the reply into a ConnectorResult. */
-    ConnectorResult execute(const ConnectorRequest& request);
+    ConnectorResult execute(const ConnectorRequest& request)override;
 private:
     ConnectorResult makePayment(const ConnectorRequest& request);
     ConnectorResult reversePayment(const ConnectorRequest& request);
