@@ -18,12 +18,12 @@ void InstanceCoordinator::publish(const WorkflowEvent& e) const {
 void InstanceCoordinator::notify(WorkflowColleague*, const WorkflowEvent& e){
     publish(e);                                  // log first: audit order stays true
     switch (e.getType()) {
-        case EventType::COMPLETED: handleCompleted(e.getWorkItemId()); break;
-        case EventType::REJECTED:
-        case EventType::CANCELLED: handleRejection(e.getWorkItemId()); break;
-        case EventType::FAILED:
-        case EventType::TIMED_OUT:
-        case EventType::ESCALATED: handleEscalation(e.getWorkItemId()); break;
+        case EVT_COMPLETED: handleCompleted(e.getWorkItemId()); break;
+        case EVT_REJECTED:
+        case EVT_CANCELLED: handleRejection(e.getWorkItemId()); break;
+        case EVT_FAILED:
+        case EVT_TIMED_OUT:
+        case EVT_ESCALATED: handleEscalation(e.getWorkItemId()); break;
         default: break;   // CREATED, ASSIGNED, STARTED, COMPENSATED: announcements only
     }
 }
@@ -49,7 +49,7 @@ void InstanceCoordinator::addParticipant(Participant* p){
 void InstanceCoordinator::start() {
     if(started) return;
     started = true;
-    publish(WorkflowEvent(EventType::CREATED, ""));
+    publish(WorkflowEvent(EVT_CREATED, ""));
     releaseAvailableItems();
 }
 
@@ -76,7 +76,7 @@ void InstanceCoordinator::releaseAvailableItems() {
             it->setAssignee(p);
             DataMap d;
             d["assignee"] = p->getName();
-            publish(WorkflowEvent(EventType::ASSIGNED, it->getId(), d));
+            publish(WorkflowEvent(EVT_ASSIGNED, it->getId(), d));
         }
     }
 }
