@@ -2,14 +2,14 @@
 #include <set>
 #include <string>
 #include <vector>
-#include "ExternalConnector.h"
+
 #include "WorkflowMediator.h"
 
 class WorkItem;
 class Participant;
 class WorkAssigner;
 class WorkflowSubject;
-class ConnectorRegistry;
+
 
 /** @brief One prerequisite link: `item` cannot start until `prerequisite` is completed. */
 struct Dependency {
@@ -27,6 +27,7 @@ struct Dependency {
 class InstanceCoordinator : public WorkflowMediator{
     private:
        WorkItem* findItem(const std::string& id) const;
+       void closeItem(const std::string& id, const std::string& reason);
        void handleCompleted(const std::string& id);
        void handleRejection(const std::string& id);    
        void handleEscalation(const std::string& id);   
@@ -34,37 +35,31 @@ class InstanceCoordinator : public WorkflowMediator{
 
        std::vector<WorkItem*> items;
        std::vector<Dependency> dependencies;       
-       std::vector<std::string> completedItems;    
+       std::vector<std::string> closedItems;    
        std::vector<Participant*> pool;             
        WorkAssigner* assigner;
        WorkflowSubject* events; 
-       ConnectorRegistry* connectors;                           
-public:
-    InstanceCoordinator(WorkAssigner* a, Subject* s);
-    ~InstanceCoordinator();
-    InstanceCoordinator& operator=(const InstanceCoordinator&) = delete;
+       bool started;  
+                            
+    public:
+       InstanceCoordinator(WorkAssigner* assigner, WorkflowSubject* events);
+       ~InstanceCoordinator();
+       InstanceCoordinator& operator=(const InstanceCoordinator&) = delete;
+ 
+       /** @brief Mediator entry point: publish first, then react */
 
-    /** @brief Mediator entry point: publish first, then react */
+       void notify(Colleague* sender, WorkflowEvent event, const std::string& itemId) override;
 
-    void notify(Colleague* sender, WorkflowEvent event, const std::string& itemId) override;
+       /** @brief Adds an item and makes this coordinator its mediator. @return false if null or duplicate id */
+       void registerItem(WorkItem* item);          
+       void addDependency(const std::string& item, const std::string& prerequisite); 
+       void addParticipant(Participant* p);
 
-    /** @brief Adds an item and makes this coordinator its mediator. @return false if null or duplicate id */
-    void registerItem(WorkItem* item);          
-    void addDependency(const std::string& item, const std::string& prerequisite); 
-    void addParticipant(Participant* p);
-
-    /** @brief Publishes CREATED and releases every item with no open prerequisites. */
-    void start();
-    bool dependenciesMet(const std::string& itemId) const;
-    void releaseAvailableItems();
-    std::vector<WorkItem*> getAvailableItems() const;  
-    bool allCompleted()const;
-
-    /**
-     * @brief Calls an external system through the Adapter registry.
-     * Retries retryable failures up to maxAttempts, then escalates the item.
-     * @return true if the call succeeded.
-     */
-    bool callExternal(const std::string& connectorKey, const ConnectorRequest& request,  ConnectorResult& out, int maxAttempts = 3);
-};
+       /** @brief Publishes CREATED and releases every item with no open prerequisites. */
+       void start();
+       bool dependenciesMet(const std::string& itemId) const;
+       void releaseAvailableItems();
+       std::vector<WorkItem*> getAvailableItems() const;  
+    
+    };
 
