@@ -1,6 +1,5 @@
 #include "tividy/composite_prototype/Stage.h"
 #include <stdexcept>
-#include <memory>
 
 Stage::Stage(const std::string& n, ExecutionMode m)
     : name(n), mode(m), activated(false), cancelledFlag(false), 
@@ -39,8 +38,6 @@ WorkflowComponent* Stage::childAt(std::size_t index) const {
     return children[index];
 }
 
-// --- Activation & Push Model ---
-
 void Stage::start() { activate(); }
 
 void Stage::activate() {
@@ -56,7 +53,7 @@ void Stage::activate() {
                 children[i]->activate();
             }
         }
-    } // busy is false here
+    } 
     
     advance();
 }
@@ -71,8 +68,8 @@ void Stage::advance() {
                 cursorActivated = true;
                 c->activate();
             }
-            if (!c->isFinished()) return; 
-            if (!c->isComplete()) return; 
+            if (!c->isFinished()) return;
+            if (!c->isComplete()) return;
             ++cursor;
             cursorActivated = false;
         }
@@ -94,7 +91,7 @@ void Stage::finish() {
 }
 
 void Stage::cancel() {
-    if (isFinished()) return; 
+    if (isFinished()) return;
 
     {
         BusyGuard g(busy);
@@ -112,7 +109,6 @@ void Stage::cancel() {
 void Stage::complete() {
     throw std::logic_error("Stages complete automatically when children finish");
 }
-
 
 bool Stage::isFinished() const {
     if (!activated && !cancelledFlag) return false;
@@ -137,18 +133,16 @@ bool Stage::isFailed() const {
     return false;
 }
 
-
 WorkflowComponent* Stage::clone() const {
-    std::unique_ptr<Stage> copy(new Stage(name, mode));
+    Stage* copy = new Stage(name, mode);
     cloneChildrenInto(*copy);
-    return copy.release();
+    return copy;
 }
 
 void Stage::cloneChildrenInto(Stage& target) const {
     for (std::size_t i = 0; i < children.size(); ++i) {
-        std::unique_ptr<WorkflowComponent> c(children[i]->clone());
-        target.add(c.get());
-        c.release();
+        WorkflowComponent* c = children[i]->clone();
+        target.add(c); // Stage::add takes ownership
     }
 }
 
@@ -164,7 +158,7 @@ void Stage::accept(WorkflowVisitor& v) {
 SubProcess::SubProcess(const std::string& n, ExecutionMode m) : Stage(n, m) {}
 
 WorkflowComponent* SubProcess::clone() const {
-    std::unique_ptr<SubProcess> copy(new SubProcess(name, mode));
+    SubProcess* copy = new SubProcess(name, mode);
     cloneChildrenInto(*copy);
-    return copy.release();
+    return copy;
 }
