@@ -1,6 +1,6 @@
 #include "AssignmentStrategy.h"
 #include "WorkItem.h"
-#include "Participant.h"
+#include "../core/Participant.h"
 
 AssignmentStrategy::~AssignmentStrategy(){}
 
