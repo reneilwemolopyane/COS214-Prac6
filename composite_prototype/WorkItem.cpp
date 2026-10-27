@@ -1,6 +1,7 @@
 #include "tividy/composite_prototype/WorkItem.h"
 #include "tividy/state/States.h"
 #include "tividy/core/Common.h"
+#include <stdexcept>
 
 WorkItem::WorkItem(const std::string& n)
     : id(n), name(n), assignee(nullptr), state(CreatedState::instance()) {}
@@ -8,38 +9,38 @@ WorkItem::WorkItem(const std::string& n)
 WorkItem::~WorkItem() {}
 
 
-
 void WorkItem::start() {
     state->start(*this); 
-    if (mediator) mediator->notify(this, WorkflowEvent(EVT_STARTED, id)); 
+    if (mediator) mediator->notify(this, WorkflowEvent(EVT_STARTED, id));
 }
 
 void WorkItem::complete() {
-    state->complete(*this);
+    state->complete(*this); 
     releaseAssignee();
     if (mediator) mediator->notify(this, WorkflowEvent(EVT_COMPLETED, id));
+    if (getParent()) getParent()->childFinished(*this); // Push model
 }
 
 void WorkItem::reject(const std::string& reason) {
-    state->reject(*this);
+    state->reject(*this); 
     failureReason = reason;
     releaseAssignee();
     DataMap d; d["reason"] = reason;
     if (mediator) mediator->notify(this, WorkflowEvent(EVT_REJECTED, id, d));
-}
-
-void WorkItem::escalate(const std::string& reason) {
-    state->escalate(*this);
-    DataMap d; d["reason"] = reason;
-    if (mediator) mediator->notify(this, WorkflowEvent(EVT_ESCALATED, id, d));
+    if (getParent()) getParent()->childFinished(*this); // Push model
 }
 
 void WorkItem::cancel() {
-    state->cancel(*this);
+    state->cancel(*this); 
     if (mediator) mediator->notify(this, WorkflowEvent(EVT_CANCELLED, id));
+    if (getParent()) getParent()->childFinished(*this); // Push model
 }
 
-
+void WorkItem::escalate(const std::string& reason) {
+    state->escalate(*this); 
+    DataMap d; d["reason"] = reason;
+    if (mediator) mediator->notify(this, WorkflowEvent(EVT_ESCALATED, id, d));
+}
 
 void WorkItem::makeAvailable() { state->makeAvailable(*this); }
 void WorkItem::assign()        { state->assign(*this); }
@@ -60,25 +61,9 @@ void WorkItem::resume()  { state->resume(*this); }
 
 void WorkItem::activate() { makeAvailable(); }
 
-
-
-bool WorkItem::isPending() const   { return state->isCreated(); }
-bool WorkItem::isAvailable() const { return state->isAvailable(); }
-bool WorkItem::isComplete() const  { return state == CompletedState::instance(); }
-bool WorkItem::isFinished() const  { return state->isFinal(); }
-bool WorkItem::isFailed() const    { return state == RejectedState::instance(); }
-
-void WorkItem::releaseAssignee() { assignee = nullptr; }
-
-
-
-void WorkItem::setState(WorkItemState* s) {
-    if (s) state = s;
-}
-
-const WorkItemState* WorkItem::getState() const { return state; }
-std::string WorkItem::getStateName() const { return state->name(); }
-std::string WorkItem::getName() const { return name; }
+bool WorkItem::isComplete() const { return state == CompletedState::instance(); }
+bool WorkItem::isFinished() const { return state->isFinal(); }
+bool WorkItem::isFailed() const   { return state == RejectedState::instance(); }
 
 WorkflowComponent* WorkItem::clone() const {
     WorkItem* copy = new WorkItem(name);
@@ -87,6 +72,15 @@ WorkflowComponent* WorkItem::clone() const {
     return copy;
 }
 
+std::string WorkItem::getName() const { return name; }
+
 void WorkItem::accept(WorkflowVisitor& v) {
-    
+    v.visitWorkItem(*this);
 }
+
+bool WorkItem::isPending() const   { return state->isCreated(); }
+bool WorkItem::isAvailable() const { return state->isAvailable(); }
+void WorkItem::releaseAssignee()   { assignee = nullptr; }
+void WorkItem::setState(WorkItemState* s) { if (s) state = s; }
+const WorkItemState* WorkItem::getState() const { return state; }
+std::string WorkItem::getStateName() const { return state->name(); }

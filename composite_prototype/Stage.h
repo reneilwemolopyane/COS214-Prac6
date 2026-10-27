@@ -7,25 +7,54 @@
 class Stage : public WorkflowComponent {
 public:
     explicit Stage(const std::string& name = "", ExecutionMode m = SEQUENTIAL);
-    ~Stage();
-    void add(WorkflowComponent*);
-    void start();
-    void complete();
-    void cancel();
-    bool isComplete() const;
-    WorkflowComponent* clone() const;
-    std::string getName() const;
-    void accept(WorkflowVisitor&);
+    ~Stage() override;
+
+    void add(WorkflowComponent* c);
+    void remove(WorkflowComponent* c);
+    std::size_t childCount() const;
+    WorkflowComponent* childAt(std::size_t index) const;
+    ExecutionMode getMode() const { return mode; }
+
+    
+    void start() override;
+    void activate() override;
+    void complete() override;
+    void cancel() override;
+    bool isComplete() const override;
+    bool isFinished() const override;
+    bool isFailed() const override;
+    void childFinished(WorkflowComponent& child) override;
+    WorkflowComponent* clone() const override;
+    std::string getName() const override;
+    void accept(WorkflowVisitor& v) override;
+
 protected:
     std::string name;
     ExecutionMode mode;
     std::vector<WorkflowComponent*> children;
+    
+    // State flags for push model
+    bool activated;
+    bool cancelledFlag;
+    bool finishedNotified;
+    bool busy;
     std::size_t cursor;
-    bool cancelled;
+    bool cursorActivated;
+
+    void advance();
+    void finish();
+    void cloneChildrenInto(Stage& target) const;
+    
+    // RAII Helper for re-entrancy
+    struct BusyGuard {
+        bool& busy;
+        BusyGuard(bool& b) : busy(b) { busy = true; }
+        ~BusyGuard() { busy = false; }
+    };
 };
 
 class SubProcess : public Stage {
 public:
-    explicit SubProcess(const std::string& n = "");
-    WorkflowComponent* clone() const;
+    explicit SubProcess(const std::string& n = "", ExecutionMode m = SEQUENTIAL);
+    WorkflowComponent* clone() const override;
 };
