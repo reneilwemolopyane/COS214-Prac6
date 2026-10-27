@@ -115,3 +115,19 @@ void WorkItem::releaseAssignee() {
 void WorkItem::setState(WorkItemState* s) { if (s) state = s; }
 const WorkItemState* WorkItem::getState() const { return state; }
 std::string WorkItem::getStateName() const { return state->name(); }
+
+void WorkItem::complete(const std::string& result) {
+    std::string previous = outcome;
+    outcome = result;
+    try {
+        complete();
+    } catch (...) {
+        outcome = previous;
+        throw;
+    }
+}
+
+void WorkItem::reopen() {
+    state->reopen(*this);
+    outcome.clear();
+}

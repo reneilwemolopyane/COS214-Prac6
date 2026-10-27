@@ -61,6 +61,7 @@ class CompletedState : public WorkItemState {
 public:
     std::string name() const;
     static WorkItemState* instance();
+    void reopen(WorkItem&);
     bool isFinal() const { return true; }
 };
 

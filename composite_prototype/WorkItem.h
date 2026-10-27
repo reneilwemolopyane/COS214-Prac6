@@ -15,6 +15,8 @@ public:
     void assign(Participant* p);
     void start() override;
     void complete() override;
+    void complete(const std::string& outcome);
+    void reopen();
     void reject(const std::string& reason);
     void cancel() override;
     void escalate(const std::string& reason);
@@ -37,6 +39,7 @@ public:
     std::string getId() const { return id; }
     std::string getRole() const { return role; }
     Participant* getAssignee() const { return assignee; }
+    std::string getOutcome() const { return outcome; }
     
     void setState(WorkItemState* s);
     void releaseAssignee();
@@ -46,6 +49,7 @@ private:
     std::string name;   
     std::string role;
     std::string failureReason;
+    std::string outcome;
     Participant* assignee;
     WorkItemState* state;
 };
