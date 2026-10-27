@@ -1,51 +1,57 @@
+#pragma once
 /**
- * @file CommandProcessor.cpp
- * @brief Implementation of the Command pattern Invoker.
+ * @file CommandProcessor.h
+ * @brief Command pattern Invoker.
  */
-#include "tividy/command/CommandProcessor.h"
-#include "tividy/core/WorkflowInstance.h"
-#include <algorithm>
+#include <vector>
+#include "command/Command.h"
 
-CommandProcessor::~CommandProcessor() {
-    for (std::size_t i = 0; i < history.size(); ++i)
-        delete history[i];
-}
+class WorkflowInstance;
 
-bool CommandProcessor::run(WorkflowCommand* command) {
-    if (!command) return false;
-    if (!owns(command)) history.push_back(command);
-    return attempt(command);
-}
+/**
+ * @brief Command pattern Invoker. One per WorkflowInstance.
+ *
+ * Runs commands, keeps them in a history, retries failed ones and
+ * compensates (undoes) completed ones in reverse order. After every
+ * attempt it reports the result to its instance, which pushes an event to
+ * the observers. The processor owns every command given to run().
+ */
+class CommandProcessor {
+public:
+    /** @param instance Instance that receives the result events (not owned). */
+    explicit CommandProcessor(WorkflowInstance* instance = 0) : instance(instance) {}
 
-bool CommandProcessor::retry(WorkflowCommand* command) {
-    if (!command || !owns(command) || command->status != "FAILED") return false;
-    return attempt(command);
-}
+    /** @brief Deletes every command in the history. */
+    ~CommandProcessor();
 
-void CommandProcessor::compensate() {
-    // Newest first: undo the last thing that was done before the things it depended on.
-    for (std::size_t i = history.size(); i > 0; --i) {
-        WorkflowCommand* c = history[i - 1];
-        if (c->status != "DONE") continue;   // Failed or already undone commands have nothing to reverse.
-        c->undo();
-        c->status = "UNDONE";
-        if (instance) instance->raiseEvent(EVT_COMPENSATED, c->getWorkItemId(), c);
-    }
-}
+    /**
+     * @brief Takes ownership of the command, records it and executes it.
+     * @return true if the command ends up DONE (including after retries triggered by observers).
+     */
+    bool run(WorkflowCommand* command);
 
-bool CommandProcessor::attempt(WorkflowCommand* command) {
-    ++command->attempts;
-    bool ok = command->execute();
-    command->status = ok ? "DONE" : "FAILED";
-    if (instance) {
-        if (ok) instance->raiseEvent(command->successEvent(), command->getWorkItemId(), command);
-        else    instance->raiseEvent(EVT_FAILED, command->getWorkItemId(), command, command->getError());
-    }
-    // A FAILED event may have made the IncidentMonitor retry this command already,
-    // so return the final status rather than the result of this one attempt.
-    return command->status == "DONE";
-}
+    /**
+     * @brief Executes a FAILED command from the history again.
+     * @return true if it is now DONE. False if the command is unknown or not FAILED.
+     */
+    bool retry(WorkflowCommand* command);
 
-bool CommandProcessor::owns(WorkflowCommand* command) const {
-    return std::find(history.begin(), history.end(), command) != history.end();
-}
+    /** @brief Undoes every reversible DONE command, newest first, and marks it UNDONE. Escalates commands that cannot be undone. */
+    void compensate();
+
+    /** @brief All commands run so far, oldest first. */
+    const std::vector<WorkflowCommand*>& getHistory() const { return history; }
+
+private:
+    /** @brief One execute() attempt: updates status and attempts, then raises the result event. */
+    bool attempt(WorkflowCommand* command);
+
+    /** @brief Whether the command is in this processor's history. */
+    bool owns(WorkflowCommand* command) const;
+
+    WorkflowInstance* instance;               ///< Receives result events (not owned).
+    std::vector<WorkflowCommand*> history;    ///< Owned commands, oldest first.
+
+    CommandProcessor(const CommandProcessor&);              ///< Not copyable.
+    CommandProcessor& operator=(const CommandProcessor&);   ///< Not assignable.
+};
