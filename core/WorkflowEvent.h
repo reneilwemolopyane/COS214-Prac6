@@ -1,40 +1,55 @@
 #pragma once
 /**
  * @file WorkflowEvent.h
- * @brief Event data pushed from the subject to observers (Observer) and sent to the Mediator.
+ * @brief Immutable event passed to observers (Observer) and to the Mediator.
  */
-#include "tividy/core/Common.h"
+#include <string>
+#include "core/Common.h"
 
 class WorkflowInstance;
 class WorkflowCommand;
 
 /**
- * @brief What happened, where, and why.
+ * @brief What happened, to which work item, plus extra data.
  *
- * Pushed to every observer through update(e). @ref source lets an observer
- * reach its instance, and @ref cause gives the IncidentMonitor the command
- * to retry.
+ * Immutable: everything is set in the constructor and only read through getters.
+ * Extra information goes in the payload, e.g. payload["message"] for an error,
+ * payload["assignee"] for an assignment, payload["command"] for the causing command.
+ *
+ * getCause() gives the IncidentMonitor the command to retry (null if not caused by a command).
+ * getSource() is the instance that raised it (null if raised outside an instance).
  */
-struct WorkflowEvent {
-    EventType type;               ///< What happened.
-    std::string instanceId;       ///< Id of the instance it happened in.
-    std::string workItemId;       ///< Work item involved, if any.
-    std::string timestamp;        ///< When it happened.
-    std::string details;          ///< Extra information, e.g. an error message.
-    std::string commandName;      ///< Name of the causing command, for the audit trail.
-    WorkflowInstance* source;     ///< Instance that raised the event (not owned).
-    WorkflowCommand* cause;       ///< Command that caused it, or null (not owned).
-
-    WorkflowEvent() : type(EVT_CREATED), source(0), cause(0) {}
-
+class WorkflowEvent {
+public:
     /**
-     * @param t Event type.
-     * @param src Instance raising the event.
-     * @param item Work item involved.
-     * @param c Command that caused it.
-     * @param info Extra details.
+     * @param type What happened.
+     * @param workItemId Work item involved, empty if none.
+     * @param payload Extra key/value data.
+     * @param cause Command that caused the event, or null (not owned).
+     * @param source Instance that raised the event, or null (not owned).
      */
-    WorkflowEvent(EventType t, WorkflowInstance* src, const std::string& item = "",
-                  WorkflowCommand* c = 0, const std::string& info = "")
-        : type(t), workItemId(item), details(info), source(src), cause(c) {}
+    explicit WorkflowEvent(EventType type, const std::string& workItemId = "",
+                           const DataMap& payload = DataMap(),
+                           WorkflowCommand* cause = 0, WorkflowInstance* source = 0)
+        : type(type), workItemId(workItemId), payload(payload), cause(cause), source(source) {}
+
+    EventType getType() const { return type; }
+    const std::string& getWorkItemId() const { return workItemId; }
+    const DataMap& getPayload() const { return payload; }
+
+    /** @brief Payload value for @p key, or "" if missing. */
+    std::string get(const std::string& key) const {
+        DataMap::const_iterator it = payload.find(key);
+        return it == payload.end() ? "" : it->second;
+    }
+
+    WorkflowCommand* getCause() const { return cause; }
+    WorkflowInstance* getSource() const { return source; }
+
+private:
+    EventType type;
+    std::string workItemId;
+    DataMap payload;
+    WorkflowCommand* cause;
+    WorkflowInstance* source;
 };
