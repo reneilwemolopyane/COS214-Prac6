@@ -36,19 +36,10 @@ WorkflowMemento*  ProcessDataStore::undo(){
     }
     
 void ProcessDataStore::backupstorage(){
-    size_t itemsToMove=10;
-
-    for(size_t i=0;i<itemsToMove;++i){
-        if(log.size() <=1) break;
-
-        auto& oldestItem=log.at(1);
-        backupStorage.push_back(std::move(oldestItem));
-
-        log.erase(log.begin() + 1);
-
+    while (log.size() > threshold) {
+        backupStorage.push_back(log.front());
+        log.erase(log.begin());
     }
-  
-
 }
 
 const std::vector<WorkflowMemento*>& ProcessDataStore::getLog() const { 

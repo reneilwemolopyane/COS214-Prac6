@@ -1,13 +1,15 @@
 #ifndef PROCESSDATASTORE_H
-#define PROGRESSDATASTORE_H
+#define PROCESSDATASTORE_H
 
+#include <cstddef>
+#include <vector>
 
-#include "../visitor/WorkflowElement.h"
-#include "../visitor/WorkflowVisitor.h"
+#include "tividy/visitor/WorkflowElement.h"
+#include "tividy/visitor/WorkflowVisitor.h"
 #include <iostream>
 
 class WorkflowVisitor;
-#include "WorkflowMemento.h"
+#include "tividy/memento/WorkflowMemento.h"
 
 class ProcessDataStore:public WorkflowElement {        
 public:
