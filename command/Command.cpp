@@ -2,10 +2,10 @@
  * @file Command.cpp
  * @brief Implementation of the concrete commands.
  */
-#include "tividy/command/Command.h"
-#include "tividy/composite/WorkItem.h"
-#include "tividy/core/Participant.h"
-#include "tividy/adapter/ExternalConnector.h"
+#include "command/Command.h"
+#include "composite_prototype/WorkItem.h"
+#include "core/Participant.h"
+#include "adapter/ExternalConnector.h"
 
 AssignWorkItemCommand::AssignWorkItemCommand(WorkItem* item, Participant* assignee, const std::string& issuedBy)
     : WorkflowCommand(item ? item->getName() : "", issuedBy), item(item), assignee(assignee), previous(0) {}
@@ -61,18 +61,18 @@ bool InvokeServiceCommand::execute() {
         return false;
     }
     error.clear();
-    // Keep the system's reference id; undo() needs it to reverse this exact call.
-    DataMap::const_iterator ref = result.data.find("referenceId");
-    referenceId = (ref != result.data.end()) ? ref->second : "";
+    // Keep everything the system returned; undo() needs its reference to reverse this exact call.
+    resultData = result.data;
     return true;
 }
 
 void InvokeServiceCommand::undo() {
-    if (!connector) return;
-    // Same parameters as the original call, plus the reference id, under the undo operation.
+    if (!connector || undoOperation.empty()) return;
+    // Original parameters plus the returned data (e.g. reference, bookingRef, documentId).
     ConnectorRequest reverse;
     reverse.operation = undoOperation;
     reverse.params = request.params;
-    reverse.params["referenceId"] = referenceId;
+    for (DataMap::const_iterator it = resultData.begin(); it != resultData.end(); ++it)
+        reverse.params[it->first] = it->second;
     connector->execute(reverse);
 }

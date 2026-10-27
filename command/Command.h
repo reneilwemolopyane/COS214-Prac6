@@ -8,8 +8,8 @@
  * record, retry and compensate actions without knowing what they do.
  */
 #include <string>
-#include "tividy/core/Common.h"
-#include "tividy/adapter/ConnectorResult.h"
+#include "core/Common.h"
+#include "adapter/ConnectorResult.h"
 
 class WorkItem;
 class Participant;
@@ -42,10 +42,13 @@ public:
     virtual std::string name() const = 0;
 
     /** @brief Event raised when execute() succeeds. */
-    virtual EventType successEvent() const { return EVT_COMPLETED; }
+    virtual EventType successEvent() const { return EventType::COMPLETED; }
 
     /** @brief Whether the last failure was temporary and worth retrying. */
     virtual bool isRetryable() const { return false; }
+
+    /** @brief Whether undo() can reverse this command. Compensation escalates commands that cannot be undone. */
+    virtual bool isReversible() const { return true; }
 
     std::string getWorkItemId() const { return workItemId; }
     std::string getIssuedBy() const { return issuedBy; }
@@ -80,7 +83,7 @@ public:
     /** @brief Gives the item back to the previous assignee (or nobody). */
     void undo();
     std::string name() const { return "AssignWorkItem"; }
-    EventType successEvent() const { return EVT_ASSIGNED; }
+    EventType successEvent() const { return EventType::ASSIGNED; }
 private:
     WorkItem* item;          ///< Receiver (not owned).
     Participant* assignee;   ///< New assignee (not owned).
@@ -107,10 +110,17 @@ private:
 /**
  * @brief ConcreteCommand: calls an external system through an ExternalConnector.
  *
- * Receiver: ExternalConnector (Adapter pattern Target), e.g. a payment adapter.
- * Keeps the reference id returned by the system so undo() can reverse the
- * call (e.g. refund a payment). The connector reports whether a failure is
- * temporary, which decides if the IncidentMonitor retries it.
+ * Receiver: ExternalConnector (Adapter pattern Target).
+ *
+ * The undo is not assumed: each external operation has its own reverse
+ * operation and its own reference in the result, for example
+ *   - "pay"   returns data["reference"]  -> undo "reverse"
+ *   - "book"  returns data["bookingRef"] -> undo "cancel"
+ *   - "store" returns data["documentId"] -> undo "delete"
+ * The caller passes the undo operation. On success the whole result data is
+ * kept, and undo() sends the undo operation with the original parameters plus
+ * that result data, so whatever reference the adapter returned is passed back.
+ * With no undo operation the command is not reversible.
  */
 class InvokeServiceCommand : public WorkflowCommand {
 public:
@@ -118,23 +128,24 @@ public:
      * @param connector External system to call (not owned).
      * @param request Generic request, e.g. operation "pay" with an amount.
      * @param workItemId Work item this call belongs to.
-     * @param undoOperation Operation sent on undo, "reverse" by default.
+     * @param undoOperation Operation that reverses this call (e.g. "reverse", "cancel", "delete"); empty if it cannot be undone.
      * @param issuedBy Who requested the call.
      */
     InvokeServiceCommand(ExternalConnector* connector, const ConnectorRequest& request,
-                         const std::string& workItemId = "", const std::string& undoOperation = "reverse",
+                         const std::string& workItemId = "", const std::string& undoOperation = "",
                          const std::string& issuedBy = "system");
     bool execute();
-    /** @brief Sends the undo operation with the saved reference id. */
+    /** @brief Sends the undo operation with the original parameters plus the saved result data. */
     void undo();
     std::string name() const { return "InvokeService"; }
     bool isRetryable() const { return retryable; }
-    /** @brief Id returned by the external system on success. */
-    std::string getReferenceId() const { return referenceId; }
+    bool isReversible() const { return !undoOperation.empty(); }
+    /** @brief Data returned by the external system on success (e.g. its reference). */
+    const DataMap& getResultData() const { return resultData; }
 private:
     ExternalConnector* connector;   ///< Receiver (not owned).
     ConnectorRequest request;       ///< The original call.
-    std::string undoOperation;      ///< Operation used to reverse the call.
-    std::string referenceId;        ///< Saved for undo.
+    std::string undoOperation;      ///< Operation that reverses the call, empty if none.
+    DataMap resultData;             ///< Result data from the successful call, used to build the undo.
     bool retryable;                 ///< Result of the last failed call.
 };
