@@ -9,7 +9,7 @@
  */
 #include <string>
 #include <vector>
-#include "observer/ObserverPattern.h"
+#include "tividy/observer/ObserverPattern.h"
 
 class CommandProcessor;
 class ExternalConnector;
@@ -39,7 +39,16 @@ private:
  * @brief ConcreteObserver that tells people when they must act.
  *
  * Reacts to ASSIGNED, ESCALATED and REJECTED. Messages are sent through an
- * ExternalConnector (Adapter pattern), e.g. an SMS or email adapter.
+ * ExternalConnector (Adapter pattern), e.g. an SMS or email adapter, as a
+ * "send" request with params "to", "text" and "urgent".
+ *
+ * The recipient is taken from the event payload: "to" if present, otherwise
+ * "assignee", otherwise the default recipient (e.g. a supervisor for escalations).
+ * With no recipient the message is recorded but not sent.
+ *
+ * With a CommandProcessor, each message is sent as a SendNotificationCommand, so a
+ * failed send is retried by the IncidentMonitor and appears in the audit trail.
+ * Without one, the message is sent directly and failures are kept in getFailed().
  */
 class NotificationService : public WorkflowObserver {
 public:
@@ -47,9 +56,12 @@ public:
      * @brief Attaches to the subject.
      * @param s Subject to observe.
      * @param channel Connector used to send messages. If null, messages are only recorded.
+     * @param defaultRecipient Who gets a message when the event names nobody, e.g. "supervisor".
+     * @param processor Invoker used to send messages as commands (not owned). Null sends directly.
      */
-    NotificationService(WorkflowSubject* s, ExternalConnector* channel = 0)
-        : WorkflowObserver(s), channel(channel) {}
+    NotificationService(WorkflowSubject* s, ExternalConnector* channel = 0,
+                        const std::string& defaultRecipient = "", CommandProcessor* processor = 0)
+        : WorkflowObserver(s), channel(channel), defaultRecipient(defaultRecipient), processor(processor) {}
 
     /** @brief Builds and sends a message for relevant event types. */
     void update(const WorkflowEvent& e);
@@ -57,9 +69,15 @@ public:
     /** @brief Every message sent so far. */
     const std::vector<std::string>& getSent() const { return sent; }
 
+    /** @brief Messages that failed when sent directly (no processor). */
+    const std::vector<std::string>& getFailed() const { return failed; }
+
 private:
     ExternalConnector* channel;     ///< Outgoing message channel (not owned).
-    std::vector<std::string> sent;  ///< Messages sent, for checking and reporting.
+    std::string defaultRecipient;   ///< Used when the event has no "to" or "assignee".
+    CommandProcessor* processor;    ///< Sends messages as commands when set (not owned).
+    std::vector<std::string> sent;  ///< Messages produced, for checking and reporting.
+    std::vector<std::string> failed;  ///< Direct sends that failed.
 };
 
 /**

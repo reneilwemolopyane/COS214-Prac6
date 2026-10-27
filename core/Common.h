@@ -9,7 +9,7 @@ typedef std::map<std::string, std::string> DataMap;
 
 /** @brief Kinds of workflow events pushed to observers and sent to the Mediator. */
 enum class EventType { CREATED, ASSIGNED, STARTED, COMPLETED, FAILED, REJECTED,
-                       CANCELLED, ESCALATED, TIMED_OUT, COMPENSATED };
+                       CANCELLED, ESCALATED, TIMED_OUT, COMPENSATED, NOTIFIED };
 enum ExecutionMode { SEQUENTIAL, PARALLEL };
 enum ApprovalOutcome { APPROVED, REJECTED, ESCALATED, MORE_INFO };
 
@@ -26,6 +26,7 @@ inline std::string eventName(EventType t) {
         case EventType::ESCALATED:   return "ESCALATED";
         case EventType::TIMED_OUT:   return "TIMED_OUT";
         case EventType::COMPENSATED: return "COMPENSATED";
+        case EventType::NOTIFIED:    return "NOTIFIED";
     }
     return "UNKNOWN";
 }

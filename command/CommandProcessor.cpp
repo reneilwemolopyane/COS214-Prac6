@@ -2,8 +2,8 @@
  * @file CommandProcessor.cpp
  * @brief Implementation of the Command pattern Invoker.
  */
-#include "command/CommandProcessor.h"
-#include "core/WorkflowInstance.h"
+#include "tividy/command/CommandProcessor.h"
+#include "tividy/core/WorkflowInstance.h"
 #include <algorithm>
 
 CommandProcessor::~CommandProcessor() {
@@ -27,6 +27,7 @@ void CommandProcessor::compensate() {
     for (std::size_t i = history.size(); i > 0; --i) {
         WorkflowCommand* c = history[i - 1];
         if (c->status != "DONE") continue;   // Failed or already undone commands have nothing to reverse.
+        if (!c->needsCompensation()) continue;   // e.g. a sent notification: nothing to undo, nothing to escalate.
         if (!c->isReversible()) {
             // Cannot be undone automatically: leave it DONE and escalate so a person handles it.
             if (instance) instance->raiseEvent(EventType::ESCALATED, c->getWorkItemId(), c, "cannot be undone automatically");
