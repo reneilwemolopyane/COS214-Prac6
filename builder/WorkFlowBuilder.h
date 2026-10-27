@@ -5,7 +5,7 @@
 #include <string>
 #include "tividy/core/Common.h"
 #include "tividy/builder/WorkflowDefinition.h"
-#include "tividy/"
+#include "tividy/composite_prototype/Stage.h"
 
 class Stage;
 class WorkflowDefinition;
