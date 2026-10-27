@@ -1,6 +1,6 @@
 // InstanceCoordinator.cpp
 #include "InstanceCoordinator.h"
-#include "Participant.h"
+#include "../core/Participant.h"
 #include "WorkAssigner.h"
 #include "WorkItem.h"
 #include "WorkflowSubject.h"
