@@ -9,13 +9,16 @@ public:
     explicit Stage(const std::string& name = "", ExecutionMode m = SEQUENTIAL);
     ~Stage() override;
 
+    // Block shallow copies
+    Stage(const Stage&) = delete;
+    Stage& operator=(const Stage&) = delete;
+
     void add(WorkflowComponent* c);
     void remove(WorkflowComponent* c);
     std::size_t childCount() const;
     WorkflowComponent* childAt(std::size_t index) const;
     ExecutionMode getMode() const { return mode; }
 
-    
     void start() override;
     void activate() override;
     void complete() override;
@@ -33,7 +36,6 @@ protected:
     ExecutionMode mode;
     std::vector<WorkflowComponent*> children;
     
-    // State flags for push model
     bool activated;
     bool cancelledFlag;
     bool finishedNotified;
@@ -45,7 +47,6 @@ protected:
     void finish();
     void cloneChildrenInto(Stage& target) const;
     
-    // RAII Helper for re-entrancy
     struct BusyGuard {
         bool& busy;
         BusyGuard(bool& b) : busy(b) { busy = true; }
