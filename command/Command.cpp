@@ -2,10 +2,10 @@
  * @file Command.cpp
  * @brief Implementation of the concrete commands.
  */
-#include "command/Command.h"
-#include "composite_prototype/WorkItem.h"
-#include "core/Participant.h"
-#include "adapter/ExternalConnector.h"
+#include "tividy/command/Command.h"
+#include "tividy/composite_prototype/WorkItem.h"
+#include "tividy/core/Participant.h"
+#include "tividy/adapter/ExternalConnector.h"
 
 AssignWorkItemCommand::AssignWorkItemCommand(WorkItem* item, Participant* assignee, const std::string& issuedBy)
     : WorkflowCommand(item ? item->getName() : "", issuedBy), item(item), assignee(assignee), previous(0) {}
