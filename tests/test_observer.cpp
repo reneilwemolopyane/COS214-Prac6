@@ -4,8 +4,8 @@
  */
 #include "tests/doctest.h"
 #include "tests/TestConnectors.h"
-#include "tividy/core/WorkflowInstance.h"
-#include "tividy/observer/Observers.h"
+#include "core/WorkflowInstance.h"
+#include "observer/Observers.h"
 
 TEST_CASE("Observers attach and detach themselves") {
     WorkflowInstance instance("I-1", 0, DataMap());
@@ -32,11 +32,11 @@ TEST_CASE("Subject pushes the full event to observers (push model)") {
     WorkflowInstance instance("I-2", 0, DataMap());
     AuditLogger logger(&instance);
 
-    instance.raiseEvent(EventType::ASSIGNED, "Review", 0, "assigned to Anna");
+    instance.raiseEvent(EVT_ASSIGNED, "Review", 0, "assigned to Anna");
 
     REQUIRE(logger.getTrail().size() == 1);
     const WorkflowEvent& e = logger.getTrail()[0];
-    CHECK(e.getType() == EventType::ASSIGNED);
+    CHECK(e.getType() == EVT_ASSIGNED);
     CHECK(e.getWorkItemId() == "Review");
     CHECK(e.get("message") == "assigned to Anna");
     CHECK(e.get("instance") == "I-2");
@@ -54,13 +54,13 @@ TEST_CASE("AuditLogger records every event in order") {
     WorkflowInstance instance("I-4", 0, DataMap());
     AuditLogger logger(&instance);
 
-    instance.raiseEvent(EventType::STARTED);
-    instance.raiseEvent(EventType::ASSIGNED, "Review");
-    instance.raiseEvent(EventType::COMPLETED, "Review");
+    instance.raiseEvent(EVT_STARTED);
+    instance.raiseEvent(EVT_ASSIGNED, "Review");
+    instance.raiseEvent(EVT_COMPLETED, "Review");
 
     REQUIRE(logger.getTrail().size() == 3);
-    CHECK(logger.getTrail()[0].getType() == EventType::STARTED);
-    CHECK(logger.getTrail()[2].getType() == EventType::COMPLETED);
+    CHECK(logger.getTrail()[0].getType() == EVT_STARTED);
+    CHECK(logger.getTrail()[2].getType() == EVT_COMPLETED);
     CHECK(logger.lines()[1] == "ASSIGNED Review");
 }
 
@@ -75,14 +75,14 @@ TEST_CASE("NotificationService only reacts when a person must act") {
     FakeConnector sms;
     NotificationService notifier(&instance, &sms, "supervisor");
 
-    instance.raiseEvent(EventType::STARTED, "Review");
-    instance.raiseEvent(EventType::COMPLETED, "Review");
+    instance.raiseEvent(EVT_STARTED, "Review");
+    instance.raiseEvent(EVT_COMPLETED, "Review");
     CHECK(notifier.getSent().empty());
     CHECK(sms.sends == 0);
 
-    instance.notifyObservers(WorkflowEvent(EventType::ASSIGNED, "Review", withAssignee("Anna")));
-    instance.raiseEvent(EventType::ESCALATED, "Approve", 0, "no response in 2 days");
-    instance.raiseEvent(EventType::REJECTED, "Approve");
+    instance.notifyObservers(WorkflowEvent(EVT_ASSIGNED, "Review", withAssignee("Anna")));
+    instance.raiseEvent(EVT_ESCALATED, "Approve", 0, "no response in 2 days");
+    instance.raiseEvent(EVT_REJECTED, "Approve");
     CHECK(notifier.getSent().size() == 3);
     CHECK(sms.sends == 3);
 }
@@ -93,7 +93,7 @@ TEST_CASE("NotificationService sends in the Adapter's format") {
     NotificationService notifier(&instance, &sms, "supervisor");
 
     SUBCASE("assignee is the recipient") {
-        instance.notifyObservers(WorkflowEvent(EventType::ASSIGNED, "Review", withAssignee("Anna")));
+        instance.notifyObservers(WorkflowEvent(EVT_ASSIGNED, "Review", withAssignee("Anna")));
         CHECK(sms.lastTo == "Anna");
         CHECK(sms.lastMessage == "ASSIGNED: Review");
         CHECK(sms.lastUrgent == "false");
@@ -101,11 +101,11 @@ TEST_CASE("NotificationService sends in the Adapter's format") {
     SUBCASE("explicit 'to' wins over assignee") {
         DataMap d = withAssignee("Anna");
         d["to"] = "anna@example.com";
-        instance.notifyObservers(WorkflowEvent(EventType::ASSIGNED, "Review", d));
+        instance.notifyObservers(WorkflowEvent(EVT_ASSIGNED, "Review", d));
         CHECK(sms.lastTo == "anna@example.com");
     }
     SUBCASE("escalation with no assignee goes to the default recipient, urgent") {
-        instance.raiseEvent(EventType::ESCALATED, "Approve", 0, "no response in 2 days");
+        instance.raiseEvent(EVT_ESCALATED, "Approve", 0, "no response in 2 days");
         CHECK(sms.lastTo == "supervisor");
         CHECK(sms.lastUrgent == "true");
         CHECK(sms.lastMessage == "ESCALATED: Approve (no response in 2 days)");
@@ -116,7 +116,7 @@ TEST_CASE("NotificationService does not send when nobody is named") {
     WorkflowInstance instance("I-7", 0, DataMap());
     FakeConnector sms;
     NotificationService notifier(&instance, &sms);
-    instance.raiseEvent(EventType::REJECTED, "Approve");
+    instance.raiseEvent(EVT_REJECTED, "Approve");
     CHECK(notifier.getSent().size() == 1);
     CHECK(sms.sends == 0);
 }
@@ -124,7 +124,7 @@ TEST_CASE("NotificationService does not send when nobody is named") {
 TEST_CASE("NotificationService works without a channel") {
     WorkflowInstance instance("I-8", 0, DataMap());
     NotificationService notifier(&instance);
-    instance.raiseEvent(EventType::ASSIGNED, "Review");
+    instance.raiseEvent(EVT_ASSIGNED, "Review");
     CHECK(notifier.getSent().size() == 1);
 }
 
@@ -135,13 +135,13 @@ TEST_CASE("Notifications sent as commands are retried when the messaging service
     FakeConnector sms(2, true);
     NotificationService notifier(&instance, &sms, "supervisor", instance.getProcessor());
 
-    instance.notifyObservers(WorkflowEvent(EventType::ASSIGNED, "Review", withAssignee("Anna")));
+    instance.notifyObservers(WorkflowEvent(EVT_ASSIGNED, "Review", withAssignee("Anna")));
 
     CHECK(sms.sends == 1);
     CHECK(monitor.getIncidents().empty());
     REQUIRE(instance.getProcessor()->getHistory().size() == 1);
     CHECK(instance.getProcessor()->getHistory()[0]->getAttempts() == 3);
-    CHECK(logger.getTrail().back().getType() == EventType::NOTIFIED);
+    CHECK(logger.getTrail().back().getType() == EVT_NOTIFIED);
     CHECK(logger.getTrail().back().get("command") == "SendNotification");
 }
 
@@ -151,7 +151,7 @@ TEST_CASE("A notification that keeps failing raises one incident") {
     FakeConnector sms(10, true);
     NotificationService notifier(&instance, &sms, "supervisor", instance.getProcessor());
 
-    instance.raiseEvent(EventType::ESCALATED, "Approve");
+    instance.raiseEvent(EVT_ESCALATED, "Approve");
 
     CHECK(sms.sends == 0);
     REQUIRE(monitor.getIncidents().size() == 1);
@@ -162,7 +162,7 @@ TEST_CASE("Compensation skips sent notifications") {
     WorkflowInstance instance("I-N3", 0, DataMap());
     FakeConnector sms;
     NotificationService notifier(&instance, &sms, "supervisor", instance.getProcessor());
-    instance.notifyObservers(WorkflowEvent(EventType::ASSIGNED, "Review", withAssignee("Anna")));
+    instance.notifyObservers(WorkflowEvent(EVT_ASSIGNED, "Review", withAssignee("Anna")));
 
     AuditLogger logger(&instance);
     instance.getProcessor()->compensate();
@@ -175,7 +175,7 @@ TEST_CASE("Without a processor, failed sends are kept") {
     WorkflowInstance instance("I-N4", 0, DataMap());
     FakeConnector sms(1, true);
     NotificationService notifier(&instance, &sms, "supervisor");
-    instance.raiseEvent(EventType::REJECTED, "Approve");
+    instance.raiseEvent(EVT_REJECTED, "Approve");
     REQUIRE(notifier.getFailed().size() == 1);
     CHECK(notifier.getFailed()[0] == "REJECTED: Approve");
 }
@@ -183,7 +183,7 @@ TEST_CASE("Without a processor, failed sends are kept") {
 TEST_CASE("IncidentMonitor raises an incident when a deadline passes") {
     WorkflowInstance instance("I-7", 0, DataMap());
     IncidentMonitor monitor(&instance, instance.getProcessor());
-    instance.raiseEvent(EventType::TIMED_OUT, "Upload documents");
+    instance.raiseEvent(EVT_TIMED_OUT, "Upload documents");
     REQUIRE(monitor.getIncidents().size() == 1);
     CHECK(monitor.getIncidents()[0] == "INCIDENT Upload documents: deadline passed");
 }
@@ -191,7 +191,7 @@ TEST_CASE("IncidentMonitor raises an incident when a deadline passes") {
 TEST_CASE("IncidentMonitor raises an incident for a failure with no command") {
     WorkflowInstance instance("I-8", 0, DataMap());
     IncidentMonitor monitor(&instance, instance.getProcessor());
-    instance.raiseEvent(EventType::FAILED, "Pay", 0, "unknown error");
+    instance.raiseEvent(EVT_FAILED, "Pay", 0, "unknown error");
     CHECK(monitor.getIncidents().size() == 1);
 }
 
@@ -206,8 +206,8 @@ TEST_CASE("An observer may detach itself during notify") {
     OneShot once(&instance);
     AuditLogger logger(&instance);
 
-    instance.raiseEvent(EventType::STARTED);
-    instance.raiseEvent(EventType::COMPLETED);
+    instance.raiseEvent(EVT_STARTED);
+    instance.raiseEvent(EVT_COMPLETED);
 
     CHECK(once.seen == 1);
     CHECK(logger.getTrail().size() == 2);

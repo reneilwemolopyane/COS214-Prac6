@@ -4,10 +4,10 @@
  */
 #include "tests/doctest.h"
 #include "tests/TestConnectors.h"
-#include "tividy/command/WorkflowEngine.h"
-#include "tividy/core/Participant.h"
-#include "tividy/composite_prototype/WorkItem.h"
-#include "tividy/observer/Observers.h"
+#include "command/WorkflowEngine.h"
+#include "core/Participant.h"
+#include "composite_prototype/WorkItem.h"
+#include "observer/Observers.h"
 
 TEST_CASE("Engine registers instances once") {
     WorkflowEngine engine;
@@ -32,7 +32,7 @@ TEST_CASE("Engine starts an instance once and announces it") {
     CHECK(engine.start("A"));
     CHECK(engine.getStatus("A") == "RUNNING");
     REQUIRE_FALSE(logger.getTrail().empty());
-    CHECK(logger.getTrail().back().getType() == EventType::STARTED);
+    CHECK(logger.getTrail().back().getType() == EVT_STARTED);
 
     CHECK_FALSE(engine.start("A"));
     CHECK_FALSE(engine.start("missing"));
@@ -78,7 +78,7 @@ TEST_CASE("Engine cancel compensates the instance's completed work") {
     CHECK(bank.reversals == 1);
     CHECK(item.getOutcome().empty());
     CHECK(engine.getStatus("A") == "CANCELLED");
-    CHECK(logger.getTrail().back().getType() == EventType::CANCELLED);
+    CHECK(logger.getTrail().back().getType() == EVT_CANCELLED);
 
     CHECK_FALSE(engine.cancel("A"));
     CHECK_FALSE(engine.completeWorkItem(a, &item, "again"));

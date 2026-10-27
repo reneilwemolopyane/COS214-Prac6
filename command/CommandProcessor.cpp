@@ -2,8 +2,8 @@
  * @file CommandProcessor.cpp
  * @brief Implementation of the Command pattern Invoker.
  */
-#include "tividy/command/CommandProcessor.h"
-#include "tividy/core/WorkflowInstance.h"
+#include "command/CommandProcessor.h"
+#include "core/WorkflowInstance.h"
 #include <algorithm>
 
 CommandProcessor::~CommandProcessor() {
@@ -30,12 +30,12 @@ void CommandProcessor::compensate() {
         if (!c->needsCompensation()) continue;   // e.g. a sent notification: nothing to undo, nothing to escalate.
         if (!c->isReversible()) {
             // Cannot be undone automatically: leave it DONE and escalate so a person handles it.
-            if (instance) instance->raiseEvent(EventType::ESCALATED, c->getWorkItemId(), c, "cannot be undone automatically");
+            if (instance) instance->raiseEvent(EVT_ESCALATED, c->getWorkItemId(), c, "cannot be undone automatically");
             continue;
         }
         c->undo();
         c->status = "UNDONE";
-        if (instance) instance->raiseEvent(EventType::COMPENSATED, c->getWorkItemId(), c);
+        if (instance) instance->raiseEvent(EVT_COMPENSATED, c->getWorkItemId(), c);
     }
 }
 
@@ -45,7 +45,7 @@ bool CommandProcessor::attempt(WorkflowCommand* command) {
     command->status = ok ? "DONE" : "FAILED";
     if (instance) {
         if (ok) instance->raiseEvent(command->successEvent(), command->getWorkItemId(), command);
-        else    instance->raiseEvent(EventType::FAILED, command->getWorkItemId(), command, command->getError());
+        else    instance->raiseEvent(EVT_FAILED, command->getWorkItemId(), command, command->getError());
     }
     // A FAILED event may have made the IncidentMonitor retry this command already,
     // so return the final status rather than the result of this one attempt.

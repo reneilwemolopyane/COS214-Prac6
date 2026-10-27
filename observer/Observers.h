@@ -9,7 +9,7 @@
  */
 #include <string>
 #include <vector>
-#include "tividy/observer/ObserverPattern.h"
+#include "observer/ObserverPattern.h"
 
 class CommandProcessor;
 class ExternalConnector;

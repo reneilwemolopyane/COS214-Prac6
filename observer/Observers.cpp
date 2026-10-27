@@ -2,10 +2,10 @@
  * @file Observers.cpp
  * @brief Implementation of the concrete observers.
  */
-#include "tividy/observer/Observers.h"
-#include "tividy/command/Command.h"
-#include "tividy/command/CommandProcessor.h"
-#include "tividy/adapter/ExternalConnector.h"
+#include "observer/Observers.h"
+#include "command/Command.h"
+#include "command/CommandProcessor.h"
+#include "adapter/ExternalConnector.h"
 
 void AuditLogger::update(const WorkflowEvent& e) {
     trail.push_back(e);
@@ -26,7 +26,7 @@ std::vector<std::string> AuditLogger::lines() const {
 
 void NotificationService::update(const WorkflowEvent& e) {
     // Only events where a person has to do something.
-    if (e.getType() != EventType::ASSIGNED && e.getType() != EventType::ESCALATED && e.getType() != EventType::REJECTED)
+    if (e.getType() != EVT_ASSIGNED && e.getType() != EVT_ESCALATED && e.getType() != EVT_REJECTED)
         return;
 
     std::string message = eventName(e.getType()) + ": " + e.getWorkItemId();
@@ -45,7 +45,7 @@ void NotificationService::update(const WorkflowEvent& e) {
     request.operation = "send";
     request.params["to"] = to;
     request.params["text"] = message;
-    request.params["urgent"] = (e.getType() == EventType::ESCALATED) ? "true" : "false";
+    request.params["urgent"] = (e.getType() == EVT_ESCALATED) ? "true" : "false";
 
     if (processor) {
         // As a command: a failed send raises FAILED, so the IncidentMonitor retries it like any other action.
@@ -56,11 +56,11 @@ void NotificationService::update(const WorkflowEvent& e) {
 }
 
 void IncidentMonitor::update(const WorkflowEvent& e) {
-    if (e.getType() == EventType::TIMED_OUT) {
+    if (e.getType() == EVT_TIMED_OUT) {
         raiseIncident(e, "deadline passed");
         return;
     }
-    if (e.getType() != EventType::FAILED) return;
+    if (e.getType() != EVT_FAILED) return;
 
     // Without the causing command there is nothing to retry.
     if (!e.getCause() || !processor) {

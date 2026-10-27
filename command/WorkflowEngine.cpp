@@ -2,9 +2,9 @@
  * @file WorkflowEngine.cpp
  * @brief Implementation of WorkflowEngine.
  */
-#include "tividy/command/WorkflowEngine.h"
-#include "tividy/command/Command.h"
-#include "tividy/command/CommandProcessor.h"
+#include "command/WorkflowEngine.h"
+#include "command/Command.h"
+#include "command/CommandProcessor.h"
 
 WorkflowEngine::~WorkflowEngine() {
     for (std::size_t i = 0; i < instances.size(); ++i)
@@ -24,7 +24,7 @@ bool WorkflowEngine::start(WorkflowInstance* instance) {
     if (s != "REGISTERED") return false;   // Each instance starts once.
     s = "RUNNING";
     instance->start();
-    instance->raiseEvent(EventType::STARTED);
+    instance->raiseEvent(EVT_STARTED);
     return true;
 }
 
@@ -38,7 +38,7 @@ bool WorkflowEngine::cancel(const std::string& instanceId) {
     // Reverse everything already done in this instance (e.g. refund a payment) before cancelling.
     instance->getProcessor()->compensate();
     status[instanceId] = "CANCELLED";
-    instance->raiseEvent(EventType::CANCELLED);
+    instance->raiseEvent(EVT_CANCELLED);
     return true;
 }
 

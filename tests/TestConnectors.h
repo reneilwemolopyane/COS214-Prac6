@@ -4,7 +4,8 @@
  * @brief Fake ExternalConnector used by the unit tests instead of real external systems.
  */
 #include <string>
-#include "tividy/adapter/ExternalConnector.h"
+#include "core/Common.h"
+#include "adapter/ExternalConnector.h"
 
 /**
  * @brief Test double for an external system (e.g. a payment gateway or SMS service).

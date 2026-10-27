@@ -8,8 +8,8 @@
  * record, retry and compensate actions without knowing what they do.
  */
 #include <string>
-#include "tividy/core/Common.h"
-#include "tividy/adapter/ConnectorResult.h"
+#include "core/Common.h"
+#include "adapter/ConnectorResult.h"
 
 class WorkItem;
 class Participant;
@@ -42,7 +42,7 @@ public:
     virtual std::string name() const = 0;
 
     /** @brief Event raised when execute() succeeds. */
-    virtual EventType successEvent() const { return EventType::COMPLETED; }
+    virtual EventType successEvent() const { return EVT_COMPLETED; }
 
     /** @brief Whether the last failure was temporary and worth retrying. */
     virtual bool isRetryable() const { return false; }
@@ -86,7 +86,7 @@ public:
     /** @brief Gives the item back to the previous assignee (or nobody). */
     void undo();
     std::string name() const { return "AssignWorkItem"; }
-    EventType successEvent() const { return EventType::ASSIGNED; }
+    EventType successEvent() const { return EVT_ASSIGNED; }
 private:
     WorkItem* item;          ///< Receiver (not owned).
     Participant* assignee;   ///< New assignee (not owned).
@@ -172,6 +172,6 @@ public:
                             const std::string& workItemId = "")
         : InvokeServiceCommand(channel, request, workItemId) {}
     std::string name() const { return "SendNotification"; }
-    EventType successEvent() const { return EventType::NOTIFIED; }
+    EventType successEvent() const { return EVT_NOTIFIED; }
     bool needsCompensation() const { return false; }
 };

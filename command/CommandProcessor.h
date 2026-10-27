@@ -4,7 +4,7 @@
  * @brief Command pattern Invoker.
  */
 #include <vector>
-#include "tividy/command/Command.h"
+#include "command/Command.h"
 
 class WorkflowInstance;
 
