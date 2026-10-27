@@ -40,7 +40,7 @@ Participant* WorkAssigner::assign(WorkItem& item, const std::vector<Participant*
         DataMap d;
         d["reason"]   = "no eligible participant";
         d["strategy"] = chosen ? chosen->name() : "none";
-        mediator->notify(this, WorkflowEvent(EventType::FAILED, item.getId(), d));
+        mediator->notify(this, WorkflowEvent(EVT_FAILED, item.getId(), d));
     }
     return p;
 }
