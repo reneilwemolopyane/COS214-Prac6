@@ -13,9 +13,9 @@
 class SchedulingAdapter : public ExternalConnector {
 public:
     SchedulingAdapter(const std::string& name, SchedulingAPI* api) : n(name), adaptee(api) {}
-    std::string name() const { return n; }
+    std::string name() const override{ return n; }
     /** @brief Translates a generic request into adaptee calls and the reply into a ConnectorResult. */
-    ConnectorResult execute(const ConnectorRequest& request);
+    ConnectorResult execute(const ConnectorRequest& request) override;
 private:
     ConnectorResult findSlot(const ConnectorRequest& request);
     ConnectorResult bookSlot(const ConnectorRequest& request);
