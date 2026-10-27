@@ -8,8 +8,8 @@
  * record, retry and compensate actions without knowing what they do.
  */
 #include <string>
-#include "core/Common.h"
-#include "adapter/ConnectorResult.h"
+#include "tividy/core/Common.h"
+#include "tividy/adapter/ConnectorResult.h"
 
 class WorkItem;
 class Participant;
@@ -49,6 +49,9 @@ public:
 
     /** @brief Whether undo() can reverse this command. Compensation escalates commands that cannot be undone. */
     virtual bool isReversible() const { return true; }
+
+    /** @brief Whether compensation should touch this command at all. False for actions with nothing to undo, e.g. a sent notification. */
+    virtual bool needsCompensation() const { return true; }
 
     std::string getWorkItemId() const { return workItemId; }
     std::string getIssuedBy() const { return issuedBy; }
@@ -148,4 +151,27 @@ private:
     std::string undoOperation;      ///< Operation that reverses the call, empty if none.
     DataMap resultData;             ///< Result data from the successful call, used to build the undo.
     bool retryable;                 ///< Result of the last failed call.
+};
+
+/**
+ * @brief ConcreteCommand: sends a message through a messaging connector.
+ *
+ * Receiver: ExternalConnector (e.g. the Adapter's MessagingAdapter).
+ * Running a notification as a command means a failed send is retried by the
+ * IncidentMonitor and recorded in the audit trail like any other action.
+ * A sent message cannot be unsent and does not need to be, so compensation skips it.
+ */
+class SendNotificationCommand : public InvokeServiceCommand {
+public:
+    /**
+     * @param channel Messaging connector (not owned).
+     * @param request "send" request with "to", "text" and "urgent".
+     * @param workItemId Work item the message is about.
+     */
+    SendNotificationCommand(ExternalConnector* channel, const ConnectorRequest& request,
+                            const std::string& workItemId = "")
+        : InvokeServiceCommand(channel, request, workItemId) {}
+    std::string name() const { return "SendNotification"; }
+    EventType successEvent() const { return EventType::NOTIFIED; }
+    bool needsCompensation() const { return false; }
 };

@@ -4,7 +4,7 @@
  * @brief Command pattern Invoker.
  */
 #include <vector>
-#include "command/Command.h"
+#include "tividy/command/Command.h"
 
 class WorkflowInstance;
 
@@ -36,7 +36,7 @@ public:
      */
     bool retry(WorkflowCommand* command);
 
-    /** @brief Undoes every reversible DONE command, newest first, and marks it UNDONE. Escalates commands that cannot be undone. */
+    /** @brief Undoes every reversible DONE command, newest first, and marks it UNDONE. Skips commands that need no compensation and escalates the ones that cannot be undone. */
     void compensate();
 
     /** @brief All commands run so far, oldest first. */

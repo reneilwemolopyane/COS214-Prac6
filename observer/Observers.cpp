@@ -2,10 +2,10 @@
  * @file Observers.cpp
  * @brief Implementation of the concrete observers.
  */
-#include "observer/Observers.h"
-#include "command/Command.h"
-#include "command/CommandProcessor.h"
-#include "adapter/ExternalConnector.h"
+#include "tividy/observer/Observers.h"
+#include "tividy/command/Command.h"
+#include "tividy/command/CommandProcessor.h"
+#include "tividy/adapter/ExternalConnector.h"
 
 void AuditLogger::update(const WorkflowEvent& e) {
     trail.push_back(e);
@@ -32,16 +32,27 @@ void NotificationService::update(const WorkflowEvent& e) {
     std::string message = eventName(e.getType()) + ": " + e.getWorkItemId();
     if (!e.get("message").empty()) message += " (" + e.get("message") + ")";
 
-    // Generic "send" request; the adapter translates it for the real SMS/email system.
-    if (channel) {
-        ConnectorRequest request;
-        request.operation = "send";
-        request.params["workItem"] = e.getWorkItemId();
-        request.params["event"] = eventName(e.getType());
-        request.params["message"] = message;
-        channel->execute(request);
-    }
+    // Who to tell: explicit "to", else the item's assignee, else the default (e.g. a supervisor).
+    std::string to = e.get("to");
+    if (to.empty()) to = e.get("assignee");
+    if (to.empty()) to = defaultRecipient;
+
     sent.push_back(message);
+    if (!channel || to.empty()) return;
+
+    // Generic "send" request in the Adapter's format; the adapter translates it for the real SMS/email system.
+    ConnectorRequest request;
+    request.operation = "send";
+    request.params["to"] = to;
+    request.params["text"] = message;
+    request.params["urgent"] = (e.getType() == EventType::ESCALATED) ? "true" : "false";
+
+    if (processor) {
+        // As a command: a failed send raises FAILED, so the IncidentMonitor retries it like any other action.
+        processor->run(new SendNotificationCommand(channel, request, e.getWorkItemId()));
+        return;
+    }
+    if (!channel->execute(request).success) failed.push_back(message);
 }
 
 void IncidentMonitor::update(const WorkflowEvent& e) {
