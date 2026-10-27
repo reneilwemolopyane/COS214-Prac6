@@ -5,12 +5,12 @@
  */
 #include "tests/doctest.h"
 #include "tests/TestConnectors.h"
-#include "tividy/core/WorkflowInstance.h"
-#include "tividy/core/Participant.h"
-#include "tividy/composite_prototype/WorkItem.h"
-#include "tividy/command/Command.h"
-#include "tividy/command/CommandProcessor.h"
-#include "tividy/observer/Observers.h"
+#include "core/WorkflowInstance.h"
+#include "core/Participant.h"
+#include "composite_prototype/WorkItem.h"
+#include "command/Command.h"
+#include "command/CommandProcessor.h"
+#include "observer/Observers.h"
 
 TEST_CASE("AssignWorkItemCommand assigns and undo restores the previous assignee") {
     WorkItem item("Review");
@@ -43,7 +43,7 @@ TEST_CASE("CompleteWorkItemCommand completes and undo reopens") {
 
     CHECK(cmd.execute());
     CHECK(item.getOutcome() == "approved");
-    CHECK(cmd.successEvent() == EventType::COMPLETED);
+    CHECK(cmd.successEvent() == EVT_COMPLETED);
 
     cmd.undo();
     CHECK(item.getOutcome().empty());
@@ -132,8 +132,8 @@ TEST_CASE("CommandProcessor records commands and reports results as events") {
     CHECK(processor->getHistory().size() == 2);
     CHECK(processor->getHistory()[0]->getStatus() == "DONE");
     REQUIRE(logger.getTrail().size() == 2);
-    CHECK(logger.getTrail()[0].getType() == EventType::ASSIGNED);
-    CHECK(logger.getTrail()[1].getType() == EventType::COMPLETED);
+    CHECK(logger.getTrail()[0].getType() == EVT_ASSIGNED);
+    CHECK(logger.getTrail()[1].getType() == EVT_COMPLETED);
     CHECK(logger.getTrail()[1].get("command") == "CompleteWorkItem");
 }
 
@@ -160,7 +160,7 @@ TEST_CASE("CommandProcessor::compensate undoes completed commands newest first")
     SUBCASE("each undo is announced, newest first") {
         const std::vector<WorkflowEvent>& t = logger.getTrail();
         REQUIRE(t.size() == 6);
-        CHECK(t[3].getType() == EventType::COMPENSATED);
+        CHECK(t[3].getType() == EVT_COMPENSATED);
         CHECK(t[3].get("command") == "CompleteWorkItem");
         CHECK(t[5].get("command") == "AssignWorkItem");
     }
@@ -178,7 +178,7 @@ TEST_CASE("CommandProcessor::compensate escalates commands that cannot be undone
 
     CHECK(cmd->getStatus() == "DONE");
     CHECK(sms.reversals == 0);
-    CHECK(logger.getTrail().back().getType() == EventType::ESCALATED);
+    CHECK(logger.getTrail().back().getType() == EVT_ESCALATED);
     CHECK(logger.getTrail().back().get("message") == "cannot be undone automatically");
 }
 

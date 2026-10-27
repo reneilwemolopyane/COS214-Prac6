@@ -1,8 +1,8 @@
 CXX = g++
 CXXFLAGS = -std=c++11 -Wall -Wextra -I .
-SRC = tividy/command/Command.cpp tividy/command/CommandProcessor.cpp tividy/command/WorkflowEngine.cpp \
-      tividy/observer/ObserverPattern.cpp tividy/observer/Observers.cpp \
-      tividy/core/Participant.cpp
+SRC = command/Command.cpp command/CommandProcessor.cpp command/WorkflowEngine.cpp \
+      observer/ObserverPattern.cpp observer/Observers.cpp \
+      core/Participant.cpp core/WorkflowInstance.cpp
 TESTS = tests/test_main.cpp tests/test_command.cpp tests/test_observer.cpp tests/test_workflow_engine.cpp
 
 unit_tests: $(TESTS) $(SRC)

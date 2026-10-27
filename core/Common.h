@@ -8,25 +8,25 @@
 typedef std::map<std::string, std::string> DataMap;
 
 /** @brief Kinds of workflow events pushed to observers and sent to the Mediator. */
-enum class EventType { CREATED, ASSIGNED, STARTED, COMPLETED, FAILED, REJECTED,
-                       CANCELLED, ESCALATED, TIMED_OUT, COMPENSATED, NOTIFIED };
+enum EventType { EVT_CREATED, EVT_ASSIGNED, EVT_STARTED, EVT_COMPLETED, EVT_FAILED, EVT_REJECTED,
+                 EVT_CANCELLED, EVT_ESCALATED, EVT_TIMED_OUT, EVT_COMPENSATED, EVT_NOTIFIED };
 enum ExecutionMode { SEQUENTIAL, PARALLEL };
 enum ApprovalOutcome { APPROVED, REJECTED, ESCALATED, MORE_INFO };
 
 /** @brief Readable name of an event type, e.g. "FAILED". */
 inline std::string eventName(EventType t) {
     switch (t) {
-        case EventType::CREATED:     return "CREATED";
-        case EventType::ASSIGNED:    return "ASSIGNED";
-        case EventType::STARTED:     return "STARTED";
-        case EventType::COMPLETED:   return "COMPLETED";
-        case EventType::FAILED:      return "FAILED";
-        case EventType::REJECTED:    return "REJECTED";
-        case EventType::CANCELLED:   return "CANCELLED";
-        case EventType::ESCALATED:   return "ESCALATED";
-        case EventType::TIMED_OUT:   return "TIMED_OUT";
-        case EventType::COMPENSATED: return "COMPENSATED";
-        case EventType::NOTIFIED:    return "NOTIFIED";
+        case EVT_CREATED:     return "CREATED";
+        case EVT_ASSIGNED:    return "ASSIGNED";
+        case EVT_STARTED:     return "STARTED";
+        case EVT_COMPLETED:   return "COMPLETED";
+        case EVT_FAILED:      return "FAILED";
+        case EVT_REJECTED:    return "REJECTED";
+        case EVT_CANCELLED:   return "CANCELLED";
+        case EVT_ESCALATED:   return "ESCALATED";
+        case EVT_TIMED_OUT:   return "TIMED_OUT";
+        case EVT_COMPENSATED: return "COMPENSATED";
+        case EVT_NOTIFIED:    return "NOTIFIED";
     }
     return "UNKNOWN";
 }
