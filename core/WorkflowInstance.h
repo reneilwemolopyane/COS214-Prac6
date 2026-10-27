@@ -1,11 +1,11 @@
 #pragma once
 #include <string>
-#include "tividy/observer/ObserverPattern.h"
-#include "tividy/visitor/Visitor.h"
-#include "tividy/composite_prototype/WorkflowComponent.h"
-#include "tividy/mediator/InstanceCoordinator.h"
-#include "tividy/command/CommandProcessor.h"
-#include "tividy/memento/Memento.h"
+#include "observer/ObserverPattern.h"
+#include "visitor/Visitor.h"
+#include "composite_prototype/WorkflowComponent.h"
+#include "mediator/InstanceCoordinator.h"
+#include "command/CommandProcessor.h"
+#include "memento/Memento.h"
 
 class WorkflowInstance : public WorkflowSubject, public WorkflowElement {
 public:
