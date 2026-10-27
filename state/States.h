@@ -61,16 +61,19 @@ class CompletedState : public WorkItemState {
 public:
     std::string name() const;
     static WorkItemState* instance();
+    bool isFinal() const { return true; }
 };
 
 class RejectedState : public WorkItemState {
 public:
     std::string name() const;
     static WorkItemState* instance();
+    bool isFinal() const { return true; }
 };
 
 class CancelledState : public WorkItemState {
 public:
     std::string name() const;
     static WorkItemState* instance();
+    bool isFinal() const { return true; }
 };
