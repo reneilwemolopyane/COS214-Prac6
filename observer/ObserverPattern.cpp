@@ -2,7 +2,7 @@
  * @file ObserverPattern.cpp
  * @brief Implementation of WorkflowSubject and WorkflowObserver.
  */
-#include "observer/ObserverPattern.h"
+#include "tividy/observer/ObserverPattern.h"
 #include <algorithm>
 
 WorkflowSubject::~WorkflowSubject() {

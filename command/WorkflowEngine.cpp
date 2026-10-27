@@ -2,9 +2,9 @@
  * @file WorkflowEngine.cpp
  * @brief Implementation of WorkflowEngine.
  */
-#include "command/WorkflowEngine.h"
-#include "command/Command.h"
-#include "command/CommandProcessor.h"
+#include "tividy/command/WorkflowEngine.h"
+#include "tividy/command/Command.h"
+#include "tividy/command/CommandProcessor.h"
 
 WorkflowEngine::~WorkflowEngine() {
     for (std::size_t i = 0; i < instances.size(); ++i)

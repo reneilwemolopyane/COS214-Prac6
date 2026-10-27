@@ -7,7 +7,7 @@
  * update(e). Observers never call back into the subject to fetch state.
  */
 #include <vector>
-#include "core/WorkflowEvent.h"
+#include "tividy/core/WorkflowEvent.h"
 
 class WorkflowObserver;
 

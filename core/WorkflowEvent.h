@@ -4,7 +4,7 @@
  * @brief Immutable event passed to observers (Observer) and to the Mediator.
  */
 #include <string>
-#include "core/Common.h"
+#include "tividy/core/Common.h"
 
 class WorkflowInstance;
 class WorkflowCommand;

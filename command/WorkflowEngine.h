@@ -6,8 +6,8 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "core/WorkflowInstance.h"
-#include "adapter/ConnectorResult.h"
+#include "tividy/core/WorkflowInstance.h"
+#include "tividy/adapter/ConnectorResult.h"
 
 class WorkItem;
 class Participant;
