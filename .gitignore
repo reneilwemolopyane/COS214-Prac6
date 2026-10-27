@@ -6,3 +6,4 @@ demo
 build/
 .vscode/
 tests/
+third_party/
