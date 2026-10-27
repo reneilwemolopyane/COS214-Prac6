@@ -2,7 +2,7 @@
 #define DEFINITIONREPOSITORY_H
 
 #include <map>
-#include <memory>
+//#include <memory>
 #include <string>
 #include "tividy/builder/WorkflowDefinition.h"
 
@@ -16,7 +16,7 @@
 class DefinitionRepository {
 public:
     DefinitionRepository();
-
+    ~DefinitionRepository();
     /**
      * @brief Store a definition, taking ownership.
      * @throws std::invalid_argument if @p definition is null.
@@ -28,6 +28,10 @@ public:
 
 private:
     std::map<std::string, WorkflowDefinition*> definitions;
+
+    DefinitionRepository(const DefinitionRepository&) = delete;
+    
+    DefinitionRepository& operator=(const DefinitionRepository&) = delete;
 };
 
 #endif

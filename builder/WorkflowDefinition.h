@@ -23,6 +23,8 @@ class WorkflowComponent;
  */
 class WorkflowDefinition {
 public:
+
+    ~WorkflowDefinition();
     /**
      * @brief Create an empty, not-yet-validated definition.
      * @param id      Unique identifier, e.g. "motor-claim".
@@ -79,6 +81,10 @@ private:
     DataMap rules;
 
     int instanceCounter;
+
+    WorkflowDefinition(const WorkflowDefinition&) = delete;
+
+    WorkflowDefinition& operator=(const WorkflowDefinition&) = delete;
 };
 
 #endif

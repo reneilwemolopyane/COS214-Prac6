@@ -1,8 +1,9 @@
 #pragma once
 #include <string>
 #include "tividy/composite_prototype/WorkflowComponent.h"
-#include "tividy/mediator/Mediator.h"
+#include "tividy/mediator/WorkflowMediator.h"
 #include "tividy/state/WorkItemState.h"
+#include "tividy/core/Participant.h"
 
 class WorkItem : public WorkflowComponent, public WorkflowColleague {
 public:

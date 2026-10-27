@@ -3,11 +3,18 @@
 #include "tividy/composite_prototype/WorkItem.h"
 
 WorkflowBuilder::WorkflowBuilder()
-    : rootStage(nullptr), currentStage(nullptr), id("unnamed"), version(1) {
-    WorkflowBuilder::reset();  // explicit: do not dispatch to a derived class mid-construction
+    : product(nullptr),
+      rootStage(nullptr),
+      currentStage(nullptr),
+      id("unnamed"),
+      version(1)
+{
+    reset();
 }
 
-WorkflowBuilder::~WorkflowBuilder() {}
+WorkflowBuilder::~WorkflowBuilder() {
+    delete product;
+}
 
 void WorkflowBuilder::setIdentity(const std::string& id, int version) {
     this->id = id;
@@ -24,7 +31,7 @@ void WorkflowBuilder::reset() {
 
     currentStage = nullptr;
 
-    product->reset(new WorkflowDefinition(id, version));
+    product = new WorkflowDefinition(id, version);
 
     product->setRoot(std::move(root));
 }
@@ -35,12 +42,12 @@ void WorkflowBuilder::appendStage(const std::string& name) {
 
     currentStage = stage;
 
-    rootStage->add(stage.release());
+    rootStage->add(stage);
 }
 
 void WorkflowBuilder::appendItem(const std::string& name, const std::string& role) {
 
-    if (currentStage_ == nullptr) 
+    if (currentStage == nullptr) 
     {
         appendStage("Default");
     }
@@ -49,9 +56,10 @@ void WorkflowBuilder::appendItem(const std::string& name, const std::string& rol
 
 WorkflowDefinition* WorkflowBuilder::release() {
 
-    WorkflowDefinition* finished(std::move(product));
+    WorkflowDefinition* finished = product;
+    product = nullptr;
 
     reset();
-    
+
     return finished;
 }
