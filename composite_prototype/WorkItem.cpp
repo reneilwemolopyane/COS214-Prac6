@@ -1,38 +1,92 @@
 #include "tividy/composite_prototype/WorkItem.h"
 #include "tividy/state/States.h"
-#include <stdexcept>
+#include "tividy/core/Common.h"
 
 WorkItem::WorkItem(const std::string& n)
-    : name(n), state(CreatedState::instance()) {}
+    : id(n), name(n), assignee(nullptr), state(CreatedState::instance()) {}
 
-void WorkItem::setState(WorkItemState* s) {
-    if (s == nullptr) throw std::invalid_argument("WorkItem::setState(nullptr)");
-    state = s;
+WorkItem::~WorkItem() {}
+
+
+
+void WorkItem::start() {
+    state->start(*this); 
+    if (mediator) mediator->notify(this, WorkflowEvent(EVT_STARTED, id)); 
 }
 
-const WorkItemState* WorkItem::getState() const { return state; }
+void WorkItem::complete() {
+    state->complete(*this);
+    releaseAssignee();
+    if (mediator) mediator->notify(this, WorkflowEvent(EVT_COMPLETED, id));
+}
+
+void WorkItem::reject(const std::string& reason) {
+    state->reject(*this);
+    failureReason = reason;
+    releaseAssignee();
+    DataMap d; d["reason"] = reason;
+    if (mediator) mediator->notify(this, WorkflowEvent(EVT_REJECTED, id, d));
+}
+
+void WorkItem::escalate(const std::string& reason) {
+    state->escalate(*this);
+    DataMap d; d["reason"] = reason;
+    if (mediator) mediator->notify(this, WorkflowEvent(EVT_ESCALATED, id, d));
+}
+
+void WorkItem::cancel() {
+    state->cancel(*this);
+    if (mediator) mediator->notify(this, WorkflowEvent(EVT_CANCELLED, id));
+}
+
+
 
 void WorkItem::makeAvailable() { state->makeAvailable(*this); }
 void WorkItem::assign()        { state->assign(*this); }
-void WorkItem::start()         { state->start(*this); }
-void WorkItem::complete()      { state->complete(*this); }
-void WorkItem::reject()        { state->reject(*this); }
-void WorkItem::cancel()        { state->cancel(*this); }
-void WorkItem::escalate()      { state->escalate(*this); }
-void WorkItem::suspend()       { state->suspend(*this); }
-void WorkItem::resume()        { state->resume(*this); }
 
-bool WorkItem::isComplete() const {
-    return state != nullptr && state == CompletedState::instance();
+void WorkItem::assign(Participant* p) {
+    Participant* prev = assignee;
+    assignee = p;
+    try {
+        state->assign(*this);
+    } catch (...) {
+        assignee = prev; // Rollback on failure
+        throw;
+    }
 }
 
-WorkflowComponent* WorkItem::clone() const {
-    // ctor sets CreatedState; only definition data (name) is copied.
-    return new WorkItem(name);
+void WorkItem::suspend() { state->suspend(*this); }
+void WorkItem::resume()  { state->resume(*this); }
+
+void WorkItem::activate() { makeAvailable(); }
+
+
+
+bool WorkItem::isPending() const   { return state->isCreated(); }
+bool WorkItem::isAvailable() const { return state->isAvailable(); }
+bool WorkItem::isComplete() const  { return state == CompletedState::instance(); }
+bool WorkItem::isFinished() const  { return state->isFinal(); }
+bool WorkItem::isFailed() const    { return state == RejectedState::instance(); }
+
+void WorkItem::releaseAssignee() { assignee = nullptr; }
+
+
+
+void WorkItem::setState(WorkItemState* s) {
+    if (s) state = s;
 }
 
+const WorkItemState* WorkItem::getState() const { return state; }
+std::string WorkItem::getStateName() const { return state->name(); }
 std::string WorkItem::getName() const { return name; }
 
-void WorkItem::accept(WorkflowVisitor&) {
-    // Deferred: Visitor.h not provided. Leaf visit method name unknown.
+WorkflowComponent* WorkItem::clone() const {
+    WorkItem* copy = new WorkItem(name);
+    copy->id = id;
+    copy->role = role;
+    return copy;
+}
+
+void WorkItem::accept(WorkflowVisitor& v) {
+    
 }
