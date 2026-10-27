@@ -6,8 +6,8 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "tividy/core/WorkflowInstance.h"
-#include "tividy/adapter/ConnectorResult.h"
+#include "core/WorkflowInstance.h"
+#include "adapter/ConnectorResult.h"
 
 class WorkItem;
 class Participant;
@@ -69,10 +69,12 @@ public:
     /**
      * @brief Calls an external system through an InvokeServiceCommand.
      * @param workItemId Work item the call belongs to, used in events.
+     * @param undoOperation Operation that reverses the call (e.g. "reverse" for "pay"); empty if it cannot be undone.
      * @return true if the call ends up succeeding (including after retries).
      */
     bool invokeService(WorkflowInstance* instance, ExternalConnector* connector,
-                       const ConnectorRequest& request, const std::string& workItemId = "");
+                       const ConnectorRequest& request, const std::string& workItemId = "",
+                       const std::string& undoOperation = "");
 
 private:
     /** @brief Runs a command on a RUNNING instance. Deletes the command if it cannot be run. */
