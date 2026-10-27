@@ -126,7 +126,7 @@ void InstanceCoordinator::closeItem(const std::string& id, const std::string& re
         dep->markEscalated();
         DataMap d;
         d["reason"] = reason;
-        publish(WorkflowEvent(EventType::ESCALATED, dep->getId(), d));
+        publish(WorkflowEvent(EVT_ESCALATED, dep->getId(), d));
         closeItem(dep->getId(), "prerequisite " + dep->getId() + " was escalated");
     }
 }
