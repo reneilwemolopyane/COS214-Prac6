@@ -13,9 +13,9 @@
 class DocumentStorageAdapter : public ExternalConnector {
 public:
     DocumentStorageAdapter(const std::string& name, DocumentStoreAPI* api) : n(name), adaptee(api) {}
-    std::string name() const { return n; }
+    std::string name() const override{ return n; }
     /** @brief Translates a generic request into adaptee calls and the reply into a ConnectorResult. */
-    ConnectorResult execute(const ConnectorRequest& request);
+    ConnectorResult execute(const ConnectorRequest& request)override;
 private:
     ConnectorResult storeDocument(const ConnectorRequest& request);
     ConnectorResult fetchDocument(const ConnectorRequest& request);
