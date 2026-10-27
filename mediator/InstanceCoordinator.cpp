@@ -1,13 +1,11 @@
 // InstanceCoordinator.cpp
 #include "InstanceCoordinator.h"
-#include "ConnectorRegistry.h"
 #include "Participant.h"
 #include "WorkAssigner.h"
 #include "WorkItem.h"
 #include "WorkflowSubject.h"
 
-InstanceCoordinator::InstanceCoordinator(WorkAssigner* a, WorkflowSubject* s, ConnectorRegistry* c)
-    : assigner(a), events(s), connectors(c) {
+InstanceCoordinator::InstanceCoordinator(WorkAssigner* a, WorkflowSubject* s)  : assigner(a), events(s), started(false){
     if (assigner) assigner->setMediator(this);
 }
 
@@ -21,7 +19,8 @@ void InstanceCoordinator::notify(WorkflowColleague*, const WorkflowEvent& e){
     publish(e);                                  // log first: audit order stays true
     switch (e.getType()) {
         case EventType::COMPLETED: handleCompleted(e.getWorkItemId()); break;
-        case EventType::REJECTED:  handleRejection(e.getWorkItemId()); break;
+        case EventType::REJECTED:
+        case EventType::CANCELLED: handleRejection(e.getWorkItemId()); break;
         case EventType::FAILED:
         case EventType::TIMED_OUT:
         case EventType::ESCALATED: handleEscalation(e.getWorkItemId()); break;
@@ -36,10 +35,10 @@ bool InstanceCoordinator::registerItem(WorkItem* item) {
     return true;
 }
 
-void InstanceCoordinator::addDependency(const std::string& item, const std::string& pre){
+void InstanceCoordinator::addDependency(const std::string& prerequisite, const std::string& item){
     Dependency d;
     d.item = item;
-    d.prerequisite = pre;
+    d.prerequisite = prerequisite;
     dependencies.push_back(d);
 }
 
@@ -48,6 +47,8 @@ void InstanceCoordinator::addParticipant(Participant* p){
 }
 
 void InstanceCoordinator::start() {
+    if(started) return;
+    started = true;
     publish(WorkflowEvent(EventType::CREATED, ""));
     releaseAvailableItems();
 }
@@ -58,6 +59,10 @@ bool InstanceCoordinator::dependenciesMet(const std::string& itemId)const{
             completedItems.find(dependencies[i].prerequisite) == completedItems.end())
             return false;
     return true;
+}
+
+bool InstanceCoordinator::isFinished()const{
+    return !items.empty() && completedItems.size() + closedItems.size() == items.size();
 }
 
 void InstanceCoordinator::releaseAvailableItems() {
@@ -100,29 +105,28 @@ void InstanceCoordinator::handleCompleted(const std::string& id){
 }
 
 void InstanceCoordinator::handleRejection(const std::string& id){
-    WorkItem* it = findItem(id);
-    if (it) it->markFailed();                     
+   closeItem(id, "prerequisite " + id + " was closed") ;                 
 }
 
 void InstanceCoordinator::handleEscalation(const std::string& id){
     WorkItem* it = findItem(id);
-    if (it) it->markEscalated();
+    if (it && closedItems.find(id) == closedItems.end()){
+        if (it) it->markEscalated();
+    }
+    closeItem(id, "prerequisite " + id + " was escalated");
+    
 }
 
-bool InstanceCoordinator::callExternal(const std::string& key, const ConnectorRequest& req, ConnectorResult& out, int maxAttempts){
-    if (!connectors) {
-        out = ConnectorResult();
-        out.message = "No connector registry configured";
-    } else {
-        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-            out = connectors->execute(key, req);
-            if (out.success) return true;
-            if (!out.retryable) break;            
-        }
+void InstanceCoordinator::closeItem(const std::string& id, const std::string& reason) {
+   if(!closedItems.insert(id).second) return;
+   for (size_t i = 0; i < dependencies.size(); i++) {
+        if (dependencies[i].prerequisite != id) continue;
+        WorkItem* dep = findItem(dependencies[i].item);
+        if (!dep || !dep->isPending()) continue;
+        dep->markEscalated();
+        DataMap d;
+        d["reason"] = reason;
+        publish(WorkflowEvent(EventType::ESCALATED, dep->getId(), d));
+        closeItem(dep->getId(), "prerequisite " + dep->getId() + " was escalated");
     }
-    DataMap d;
-    d["connector"] = key;
-    d["message"]   = out.message;
-    notify(nullptr, WorkflowEvent(EventType::ESCALATED, req.itemId, d));
-    return false;
 }
