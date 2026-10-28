@@ -2,7 +2,7 @@
 #include <functional>
 #include <string>
 #include "tividy/core/Common.h"
-#include "tividy/mediator/Mediator.h"
+#include "tividy/mediator/WorkflowMediator.h"
 #include "ApprovalRequest.h"
 
 /** @file ApprovalHandler.h
