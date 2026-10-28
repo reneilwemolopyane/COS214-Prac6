@@ -1,6 +1,6 @@
 #include "tividy/core/Participant.h"
 
-Participant::Participant(const std::string& id, const std::string& name) : id(pid), name(pname), workload(0) {}
+Participant::Participant(const std::string& pid, const std::string& pname) : id(pid), name(pname), workload(0) {}
 
 const std::string& Participant::getId()const{
     return id;
@@ -26,5 +26,5 @@ void itemAssigned(){
     ++workload;
 }
 void itemReleased(){
-    if(worklod > 0) --workload;
+    if(workload > 0) --workload;
 }
