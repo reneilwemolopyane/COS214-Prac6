@@ -1,30 +1,24 @@
-// tests/MediatorStrategyTests.cpp
-#include <gtest/gtest.h>
+#include "doctest.h"
 #include <vector>
 
-#include "tividy/core/Participant.h"
-#include "tividy/composite_prototype/WorkItem.h"
-#include "tividy/state/InvalidTransitionException.h"
-#include "tividy/strategy/AssignmentStrategy.h"
-#include "tividy/strategy/WorkAssigner.h"
-#include "tividy/mediator/InstanceCoordinator.h"
-#include "tividy/observer/Observers.h"          
+#include "core/Participant.h"
+#include "core/Common.h"
+#include "strategy/AssignmentStrategy.h"
+#include "strategy/WorkAssigner.h"
+#include "mediator/InstanceCoordinator.h"
+#include "observer/Observers.h"
+#include "composite_prototype/WorkItem.h"
+#include "state/InvalidTransitionException.h"
 
-// ---------- helpers ----------
 namespace {
 
-/** Records every event type it receives, in order. */
 class RecordingObserver : public WorkflowObserver {
 public:
-    void update(const WorkflowEvent& e) override { seen.push_back(e.getType()); }
+    void update(const WorkflowEvent& e) override { seen.push_back(static_cast<int>(e.getType())); }
     int count(int type) const {
         int n = 0;
         for (size_t i = 0; i < seen.size(); i++) if (seen[i] == type) n++;
         return n;
-    }
-    int firstIndex(int type) const {
-        for (size_t i = 0; i < seen.size(); i++) if (seen[i] == type) return (int)i;
-        return -1;
     }
     int lastIndex(int type) const {
         for (int i = (int)seen.size() - 1; i >= 0; i--) if (seen[i] == type) return i;
@@ -33,9 +27,9 @@ public:
     std::vector<int> seen;
 };
 
-/** One independent workflow instance: its own people, items, assigner, coordinator. */
+// One independent workflow instance. Participants are declared first so they
+// are destroyed last (items release their assignee when destroyed).
 struct Instance {
-    // Declared first => destroyed last, because items release their assignee on destruction.
     Participant thandi;
     Participant sipho;
     WorkItem police;
@@ -71,14 +65,14 @@ struct Instance {
         coord.addDependency("police", "decision");
         coord.addDependency("inspect", "decision");
     }
-    void run(WorkItem& w) { w.start(); w.complete(); }   // assigned -> in progress -> completed
+    void run(WorkItem& w) { w.start(); w.complete(); }
 };
 
 } // namespace
 
 // ================= Strategy =================
 
-TEST(StrategyTest, RoleBasedPicksEligibleParticipant) {
+TEST_CASE("Strategy: RoleBased picks eligible participant") {
     Participant nurse("P1", "Sipho"), assessor("P2", "Thandi");
     nurse.addRole("Nurse");
     assessor.addRole("Assessor");
@@ -87,10 +81,10 @@ TEST(StrategyTest, RoleBasedPicksEligibleParticipant) {
     std::vector<Participant*> pool = { &nurse, &assessor };
 
     RoleBasedStrategy s;
-    EXPECT_EQ(&assessor, s.selectParticipant(item, pool));
+    CHECK(s.selectParticipant(item, pool) == &assessor);
 }
 
-TEST(StrategyTest, RoleBasedReturnsNullWhenNobodyEligible) {
+TEST_CASE("Strategy: RoleBased returns null when nobody eligible") {
     Participant nurse("P1", "Sipho");
     nurse.addRole("Nurse");
     WorkItem item("i1", "Inspect");
@@ -98,23 +92,23 @@ TEST(StrategyTest, RoleBasedReturnsNullWhenNobodyEligible) {
     std::vector<Participant*> pool = { &nurse };
 
     RoleBasedStrategy s;
-    EXPECT_EQ(nullptr, s.selectParticipant(item, pool));
+    CHECK(s.selectParticipant(item, pool) == nullptr);
 }
 
-TEST(StrategyTest, ShortestQueuePicksLowestWorkload) {
+TEST_CASE("Strategy: ShortestQueue picks lowest workload") {
     Participant a("P1", "Thandi"), b("P2", "Sipho");
     a.addRole("Assessor");
     b.addRole("Assessor");
-    a.itemAssigned();                       // Thandi is busier
+    a.itemAssigned();
     WorkItem item("i1", "Inspect");
     item.setRole("Assessor");
     std::vector<Participant*> pool = { &a, &b };
 
     ShortestQueueStrategy s;
-    EXPECT_EQ(&b, s.selectParticipant(item, pool));
+    CHECK(s.selectParticipant(item, pool) == &b);
 }
 
-TEST(StrategyTest, RoundRobinRotates) {
+TEST_CASE("Strategy: RoundRobin rotates") {
     Participant a("P1", "Thandi"), b("P2", "Sipho");
     a.addRole("Assessor");
     b.addRole("Assessor");
@@ -123,12 +117,12 @@ TEST(StrategyTest, RoundRobinRotates) {
     std::vector<Participant*> pool = { &a, &b };
 
     RoundRobinStrategy s;
-    EXPECT_EQ(&a, s.selectParticipant(item, pool));
-    EXPECT_EQ(&b, s.selectParticipant(item, pool));
-    EXPECT_EQ(&a, s.selectParticipant(item, pool));
+    CHECK(s.selectParticipant(item, pool) == &a);
+    CHECK(s.selectParticipant(item, pool) == &b);
+    CHECK(s.selectParticipant(item, pool) == &a);
 }
 
-TEST(StrategyTest, CloneKeepsItsOwnRoundRobinPosition) {
+TEST_CASE("Strategy: clone keeps its own RoundRobin position") {
     Participant a("P1", "Thandi"), b("P2", "Sipho");
     a.addRole("Assessor");
     b.addRole("Assessor");
@@ -137,14 +131,14 @@ TEST(StrategyTest, CloneKeepsItsOwnRoundRobinPosition) {
     std::vector<Participant*> pool = { &a, &b };
 
     RoundRobinStrategy original;
-    original.selectParticipant(item, pool);                 // original -> a
+    original.selectParticipant(item, pool);
     AssignmentStrategy* copy = original.clone();
-    EXPECT_EQ(&b, copy->selectParticipant(item, pool));     // copy continues from a -> b
-    EXPECT_EQ(&b, original.selectParticipant(item, pool));  // original unaffected by the copy
+    CHECK(copy->selectParticipant(item, pool) == &b);
+    CHECK(original.selectParticipant(item, pool) == &b);
     delete copy;
 }
 
-TEST(StrategyTest, DataRuleMapsValueToRole) {
+TEST_CASE("Strategy: DataRule maps value to role") {
     Participant car("P1", "Thandi"), house("P2", "Sipho");
     car.addRole("VehicleAssessor");
     house.addRole("PropertyAssessor");
@@ -155,10 +149,10 @@ TEST(StrategyTest, DataRuleMapsValueToRole) {
     DataRuleStrategy s("claimType");
     s.addMapping("vehicle", "VehicleAssessor");
     s.addMapping("property", "PropertyAssessor");
-    EXPECT_EQ(&house, s.selectParticipant(item, pool));
+    CHECK(s.selectParticipant(item, pool) == &house);
 }
 
-TEST(StrategyTest, DataRuleUnknownValueReturnsNull) {
+TEST_CASE("Strategy: DataRule unknown value returns null") {
     Participant car("P1", "Thandi");
     car.addRole("VehicleAssessor");
     WorkItem item("i1", "Assess");
@@ -167,19 +161,19 @@ TEST(StrategyTest, DataRuleUnknownValueReturnsNull) {
 
     DataRuleStrategy s("claimType");
     s.addMapping("vehicle", "VehicleAssessor");
-    EXPECT_EQ(nullptr, s.selectParticipant(item, pool));
+    CHECK(s.selectParticipant(item, pool) == nullptr);
 }
 
-TEST(StrategyTest, WorkAssignerUsesRegisteredRuleThenDefault) {
+TEST_CASE("Strategy: WorkAssigner uses registered rule, then default") {
     Participant a("P1", "Thandi"), b("P2", "Sipho");
     a.addRole("Assessor");
     b.addRole("Assessor");
-    a.itemAssigned();                                       // a busier than b
+    a.itemAssigned();
     std::vector<Participant*> pool = { &a, &b };
 
     WorkAssigner assigner;
-    assigner.setDefaultStrategy(RoleBasedStrategy());       // would pick a
-    assigner.registerStrategy("light", ShortestQueueStrategy());   // picks b
+    assigner.setDefaultStrategy(RoleBasedStrategy());
+    assigner.registerStrategy("light", ShortestQueueStrategy());
 
     WorkItem ruled("i1", "Ruled");
     ruled.setRole("Assessor");
@@ -187,102 +181,95 @@ TEST(StrategyTest, WorkAssignerUsesRegisteredRuleThenDefault) {
     WorkItem plain("i2", "Plain");
     plain.setRole("Assessor");
 
-    EXPECT_EQ(&b, assigner.assign(ruled, pool));
-    EXPECT_EQ(&a, assigner.assign(plain, pool));
+    CHECK(assigner.assign(ruled, pool) == &b);
+    CHECK(assigner.assign(plain, pool) == &a);
 }
 
 // ================= Mediator =================
 
-TEST(MediatorTest, DecisionWaitsForAllPrerequisites) {
+TEST_CASE("Mediator: decision waits for all prerequisites") {
     Instance in;
     in.coord.start();
-
-    EXPECT_TRUE(in.police.isAvailable() || in.police.getStateName() == "Assigned");
-    EXPECT_TRUE(in.decision.isPending());
+    CHECK(in.decision.isPending());
 
     in.run(in.police);
-    EXPECT_TRUE(in.decision.isPending());                   // inspection still open
+    CHECK(in.decision.isPending());
 
     in.run(in.inspect);
-    EXPECT_FALSE(in.decision.isPending());                  // released once both are done
+    CHECK_FALSE(in.decision.isPending());
 }
 
-TEST(MediatorTest, DuplicateAndNullItemsAreRejected) {
+TEST_CASE("Mediator: duplicate and null items are rejected") {
     Instance in;
     WorkItem dup("police", "Another police check");
-    EXPECT_FALSE(in.coord.registerItem(&dup));
-    EXPECT_FALSE(in.coord.registerItem(nullptr));
+    CHECK_FALSE(in.coord.registerItem(&dup));
+    CHECK_FALSE(in.coord.registerItem(nullptr));
 }
 
-TEST(MediatorTest, WorkloadRisesOnAssignAndFallsOnComplete) {
+TEST_CASE("Mediator: workload rises on assign and falls on complete") {
     Instance in;
     in.coord.start();
-    int busy = in.thandi.getWorkload() + in.sipho.getWorkload();
-    EXPECT_EQ(2, busy);                                     // police and inspect assigned
+    CHECK_EQ(2, in.thandi.getWorkload() + in.sipho.getWorkload());
 
     in.run(in.police);
-    EXPECT_EQ(1 + 1, in.thandi.getWorkload() + in.sipho.getWorkload() + 0 + 0 - 0 + 0 + 0
-                      - (in.decision.isPending() ? 0 : 1) + (in.decision.isPending() ? 0 : 0));
+    CHECK_EQ(1, in.thandi.getWorkload() + in.sipho.getWorkload());
 }
 
-TEST(MediatorTest, NoEligibleParticipantEscalatesTheItem) {
+TEST_CASE("Mediator: no eligible participant escalates the item") {
     Instance in;
-    in.police.setRole("Surgeon");                           // nobody holds this role
+    in.police.setRole("Surgeon");
     in.coord.start();
 
-    EXPECT_GE(in.log.count(EVT_FAILED), 1);
-    EXPECT_TRUE(in.police.isFinished());                    // forced into Escalated (final)
+    CHECK_GE(in.log.count(EVT_FAILED), 1);
+    CHECK(in.police.isFinished());
 }
 
-TEST(MediatorTest, RejectedPrerequisiteEscalatesDependentsSoInstanceFinishes) {
+TEST_CASE("Mediator: rejected prerequisite escalates dependents") {
     Instance in;
     in.coord.start();
-
     in.police.start();
     in.police.reject("report invalid");
     in.run(in.inspect);
 
-    EXPECT_TRUE(in.decision.isFinished());                  // escalated, not left waiting
-    EXPECT_TRUE(in.coord.isFinished());
+    CHECK(in.decision.isFinished());
+    CHECK(in.coord.isFinished());
 }
 
-TEST(MediatorTest, FullHappyPathFinishesInstance) {
+TEST_CASE("Mediator: full happy path finishes the instance") {
     Instance in;
     in.coord.start();
     in.run(in.police);
     in.run(in.inspect);
     in.run(in.decision);
-    EXPECT_TRUE(in.coord.isFinished());
+    CHECK(in.coord.isFinished());
 }
 
-TEST(MediatorTest, ObserverSeesCompletedBeforeNextAssigned) {
+TEST_CASE("Mediator: observer sees COMPLETED before next ASSIGNED") {
     Instance in;
     in.coord.start();
     in.run(in.police);
-    in.run(in.inspect);                                     // releases and assigns decision
+    in.run(in.inspect);
 
-    int completed = in.log.lastIndex(EVT_COMPLETED);
-    int assignedLast = in.log.lastIndex(EVT_ASSIGNED);
-    EXPECT_LT(completed, assignedLast);                     // log first, then react
+    CHECK_LT(in.log.lastIndex(EVT_COMPLETED), in.log.lastIndex(EVT_ASSIGNED));
 }
 
-TEST(MediatorTest, RefusedActionRaisesNoEvent) {
-    Instance in;                                            // not started: items are Created
-    EXPECT_THROW(in.police.complete(), InvalidTransitionException);
-    EXPECT_EQ(0, in.log.count(EVT_COMPLETED));
+TEST_CASE("Mediator: refused action raises no event") {
+    Instance in;
+    CHECK_THROWS_AS(in.police.complete(), InvalidTransitionException);
+    CHECK_EQ(0, in.log.count(EVT_COMPLETED));
 }
 
-TEST(MediatorTest, StartIsIdempotent) {
+TEST_CASE("Mediator: start is idempotent") {
     Instance in;
     in.coord.start();
     int assigned = in.log.count(EVT_ASSIGNED);
-    in.coord.start();                                       // second call does nothing
-    EXPECT_EQ(assigned, in.log.count(EVT_ASSIGNED));
+    in.coord.start();
+    CHECK_EQ(assigned, in.log.count(EVT_ASSIGNED));
 }
 
 // ================= Instance isolation =================
 
-TEST(IsolationTest, CompletingInOneInstanceDoesNotAffectAnother) {
+TEST_CASE("Isolation: completing in one instance does not affect another") {
     Instance a;
     Instance b;
     a.coord.start();
@@ -291,14 +278,14 @@ TEST(IsolationTest, CompletingInOneInstanceDoesNotAffectAnother) {
     a.run(a.police);
     a.run(a.inspect);
 
-    EXPECT_FALSE(a.decision.isPending());                   // released in A
-    EXPECT_TRUE(b.decision.isPending());                    // untouched in B
-    EXPECT_EQ(0, b.log.count(EVT_COMPLETED));
+    CHECK_FALSE(a.decision.isPending());
+    CHECK(b.decision.isPending());
+    CHECK_EQ(0, b.log.count(EVT_COMPLETED));
 }
 
-TEST(IsolationTest, WorkloadIsPerInstance) {
+TEST_CASE("Isolation: workload is per instance") {
     Instance a;
     Instance b;
     a.coord.start();
-    EXPECT_EQ(0, b.thandi.getWorkload() + b.sipho.getWorkload());
+    CHECK_EQ(0, b.thandi.getWorkload() + b.sipho.getWorkload());
 }
