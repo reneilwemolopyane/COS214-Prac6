@@ -7,6 +7,7 @@
 #include "tividy/command/CommandProcessor.h"
 #include "tividy/memento/Memento.h"
 
+class WorkflowInstance;
 class WorkflowInstance : public WorkflowSubject, public WorkflowElement {
 public:
     WorkflowInstance(const std::string& id,
@@ -33,5 +34,4 @@ private:
     DataMap data;
     int version;
     InstanceCoordinator* coordinator;
-    CommandProcessor* processor;
-};
+    CommandPr
