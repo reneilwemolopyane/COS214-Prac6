@@ -1,4 +1,5 @@
 #include "tividy/builder/WorkflowDefinition.h"
+#include "tividy/core/WorkflowInstance.h"
 #include <stdexcept>
 
 WorkflowDefinition::WorkflowDefinition(const std::string& id, int version)
@@ -24,7 +25,7 @@ WorkflowInstance* WorkflowDefinition::createInstance(const DataMap& data) {
 
     std::string instanceId = id + "-" + std::to_string(instanceCounter);
 
-    return new WorkflowInstance(instanceId, std::move(copy), data, version);
+    return new WorkflowInstance(instanceId, copy, data, version);
 }
 
 std::string WorkflowDefinition::getId() const{ 
