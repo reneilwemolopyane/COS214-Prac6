@@ -1,5 +1,6 @@
 #pragma once
 #include <functional>
+#include <string>
 #include "WorkItemDecorator.h"
 
 /** @brief Blocks completion unless a configurable rule passes. */
@@ -13,6 +14,7 @@ public:
 
     /** @throws std::runtime_error if the rule fails */
     void complete();
+    void complete(const std::string& outcome) override;
     WorkflowComponent* clone() const;
 private:
     Rule rule;

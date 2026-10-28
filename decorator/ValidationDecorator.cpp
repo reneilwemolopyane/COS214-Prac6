@@ -10,6 +10,12 @@ void ValidationDecorator::complete() {
     wrapped->complete();
 }
 
+void ValidationDecorator::complete(const std::string& outcome) {
+    if (rule && !rule())
+        throw std::runtime_error("Validation failed for " + wrapped->getName());
+    wrapped->complete(outcome);
+}
+
 WorkflowComponent* ValidationDecorator::clone() const {
     return new ValidationDecorator(wrapped->clone(), rule);
 }

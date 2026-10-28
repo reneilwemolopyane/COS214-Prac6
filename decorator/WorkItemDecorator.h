@@ -2,6 +2,8 @@
 #include <string>
 #include "tividy/composite_prototype/WorkflowComponent.h"
 
+class Participant;   // harmless if WorkflowComponent.h already declares it
+
 /** @file WorkItemDecorator.h
  *  @brief Decorator: layers extra behaviour onto a work item without
  *  subclassing for every combination. */
@@ -20,6 +22,11 @@ public:
     bool isComplete() const;
     std::string getName() const;
     void accept(WorkflowVisitor& v);
+
+    /** Command actions. Forwarded here so concrete decorators can intercept
+     *  them: commands call these on the outermost decorator. */
+    void assign(Participant* p) override;
+    void complete(const std::string& outcome) override;
 
     void activate() override;
     bool isFinished() const override;

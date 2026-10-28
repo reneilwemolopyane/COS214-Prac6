@@ -26,6 +26,7 @@ public:
     /** @throws std::runtime_error if the actor's role is not permitted */
     void start();
     void complete();
+    void complete(const std::string& outcome) override;
     void cancel();
     WorkflowComponent* clone() const;
 private:
