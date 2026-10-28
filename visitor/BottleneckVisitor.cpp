@@ -1,66 +1,62 @@
 #include "BottleneckVisitor.h"
-#include "tividy/memento/ProcessDataStore.h"
-#include "tividy/state/WorkItemState.h"
-#include "tividy/command/Command.h"
-#include "tividy/chain_of_responsibility/ApprovalHandler.h"
+#include "memento/ProcessDataStore.h"
+#include "composite_prototype/Stage.h"
+#include "composite_prototype/WorkItem.h"
+#include "core/WorkflowInstance.h"
 
 #include <chrono>
-#include <iostream>
 
-void BottleneckVisitor::visitState(const WorkItemState& state) {
-    const auto entry = stateEnteredAt.find(&state);
-    if (entry == stateEnteredAt.end()) {
-        return;
-    }
-
-    const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
-        std::chrono::steady_clock::now() - entry->second).count();
-    if (elapsed >= static_cast<long long>(stateSlaSeconds)) {
-        std::cout << "[SLA ALERT] State " << state.name() << " idle for "
-                  << elapsed << " seconds.\n";
-    }
+void BottleneckVisitor::visitInstance(WorkflowInstance& instance) {
+    report += "Checking workflow instance " + instance.getId() + "\n";
 }
 
-void BottleneckVisitor::visitHandler(const ApprovalHandler& handler) {
-    const auto execution = handlerExecutionTimes.find(&handler);
-    if (execution == handlerExecutionTimes.end()) {
-        return;
-    }
-
-    const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-        execution->second.second - execution->second.first).count();
-    if (elapsed >= static_cast<long long>(handlerSlaMilliseconds)) {
-        std::cout << "[SLA ALERT] Approval handler took " << elapsed << " ms.\n";
+void BottleneckVisitor::visitStage(Stage& stage) {
+    report += "Checking stage " + stage.getName() + "\n";
+    const auto entry = stageEnteredAt.find(&stage);
+    if (entry != stageEnteredAt.end()) {
+        const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::steady_clock::now() - entry->second).count();
+        if (elapsed >= static_cast<long long>(stageSlaSeconds)) {
+            report += "[BOTTLENECK] Stage " + stage.getName() + " exceeded its time limit.\n";
+        }
     }
 }
 
-void BottleneckVisitor::setHandlerExecutionTimes(const ApprovalHandler& handler,std::chrono::steady_clock::time_point startedAt,
-    std::chrono::steady_clock::time_point endedAt) {
-    handlerExecutionTimes[&handler] = std::make_pair(startedAt, endedAt);
+void BottleneckVisitor::visitWorkItem(WorkItem& item) {
+    report += "Checking work item " + item.getId() + " (" + item.getStateName() + ")\n";
+    const auto entry = workItemEnteredAt.find(&item);
+    if (entry != workItemEnteredAt.end()) {
+        const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::steady_clock::now() - entry->second).count();
+        if (elapsed >= static_cast<long long>(workItemSlaSeconds)) {
+            report += "[BOTTLENECK] Work item " + item.getId() + " exceeded its time limit.\n";
+        }
+    }
 }
 
-void BottleneckVisitor::setStateEnteredAt(
-    const WorkItemState& state, std::chrono::steady_clock::time_point enteredAt) {
-    stateEnteredAt[&state] = enteredAt;
+void BottleneckVisitor::setStageEnteredAt(
+    const Stage& stage, std::chrono::steady_clock::time_point enteredAt) {
+    stageEnteredAt[&stage] = enteredAt;
 }
 
-void BottleneckVisitor::setStateSlaSeconds(std::size_t seconds) {
-    stateSlaSeconds = seconds;
+void BottleneckVisitor::setWorkItemEnteredAt(
+    const WorkItem& item, std::chrono::steady_clock::time_point enteredAt) {
+    workItemEnteredAt[&item] = enteredAt;
 }
 
-void BottleneckVisitor::setHandlerSlaMilliseconds(std::size_t milliseconds) {
-    handlerSlaMilliseconds = milliseconds;
+void BottleneckVisitor::setStageSlaSeconds(std::size_t seconds) {
+    stageSlaSeconds = seconds;
+}
+
+void BottleneckVisitor::setWorkItemSlaSeconds(std::size_t seconds) {
+    workItemSlaSeconds = seconds;
 }
 
 void BottleneckVisitor::visitProcessDataStore(ProcessDataStore& data) {
     if (data.IspastThreshold()) {
-        std::cout << "Memento log threshold exceeded: "
-                  << data.getLog().size() << '\n';
+        report += "Memento log threshold exceeded: " +
+                  std::to_string(data.getLog().size()) + "\n";
         data.backupstorage();
     }
-}
-
-void BottleneckVisitor::visitCommand(const WorkflowCommand& command) {
-    (void)command;
 }
 

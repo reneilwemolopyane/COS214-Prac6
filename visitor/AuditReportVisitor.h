@@ -1,15 +1,20 @@
 #ifndef AUDITREPORTVISITOR_H
 #define AUDITREPORTVISITOR_H
 
-#include "WorkflowVisitor.h"
+#include "Visitor.h"
+#include <sstream>
 #include <string>
 
 class AuditReportVisitor : public WorkflowVisitor {
 public:
-    void visitState(const WorkItemState& state) override;
-    void visitHandler(const ApprovalHandler& handler) override;
-    void visitCommand(const WorkflowCommand& command) override;
+    void visitInstance(WorkflowInstance& instance) override;
+    void visitStage(Stage& stage) override;
+    void visitWorkItem(WorkItem& item) override;
     void visitProcessDataStore(ProcessDataStore& data) override;
+    std::string getReport() const override { return report.str(); }
+
+private:
+    std::ostringstream report;
 };
 
 #endif
