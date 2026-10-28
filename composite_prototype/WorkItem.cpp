@@ -55,7 +55,8 @@ void WorkItem::escalate(const std::string& reason) {
 
 
 void WorkItem::markEscalated() {
-    escalate("System escalation");
+    releaseAssignee();
+    setState(EscalatedState::instance());
 }
 
 
