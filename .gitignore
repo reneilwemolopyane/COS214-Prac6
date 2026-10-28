@@ -10,6 +10,7 @@ teamwork_client/
 build/
 build-tests/
 scratch/
+sandbox_test/
 tividy_app
 tividy_app.exe
 *.exe

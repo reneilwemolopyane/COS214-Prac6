@@ -40,6 +40,24 @@ target_include_directories(WorkflowBuilderTests PRIVATE
 
 add_test(NAME WorkflowBuilderTests COMMAND WorkflowBuilderTests)
 
+# ===== State + Composite tests =====
+add_executable(StateCompositeTests
+    tests/StateCompositeTests.cpp
+    tividy/composite_prototype/Stage.cpp
+    tividy/composite_prototype/WorkItem.cpp
+    tividy/state/WorkItemState.cpp
+    tividy/state/States.cpp
+    tividy/core/Participant.cpp
+)
+
+target_include_directories(StateCompositeTests PRIVATE
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/tividy
+    ${DOCTEST_DIR}
+)
+
+add_test(NAME StateCompositeTests COMMAND StateCompositeTests)
+
 # ===== Chain of Responsibility + Decorator tests =====
 set(CD_TESTS ${CMAKE_SOURCE_DIR}/tests/chain_decorator)
 
