@@ -1,13 +1,15 @@
 #pragma once
 #include <string>
+#include <map>
 #include "tividy/composite_prototype/WorkflowComponent.h"
-#include "tividy/mediator/WorkflowMediator.h"
+#include "tividy/mediator/WorkflowMediator.h" 
 #include "tividy/state/WorkItemState.h"
-#include "tividy/core/Participant.h"
+
+class Participant; // FIXED: Forward declaration
 
 class WorkItem : public WorkflowComponent, public WorkflowColleague {
 public:
-    // Fixed: Separate id and name
+    
     explicit WorkItem(const std::string& id, const std::string& name);
     ~WorkItem() override;
 
@@ -22,6 +24,10 @@ public:
     void suspend();
     void resume();
 
+    
+    void markEscalated(); 
+
+    
     void activate() override;
     bool isComplete() const override;
     bool isFinished() const override;
@@ -38,6 +44,10 @@ public:
     std::string getId() const { return id; }
     std::string getRole() const { return role; }
     Participant* getAssignee() const { return assignee; }
+    std::string getAssignmentRule() const { return assignmentRule; } // NEW
+    
+    std::string getData(const std::string& key) const;               // NEW
+    void setData(const std::string& key, const std::string& value);  // NEW
     
     void setState(WorkItemState* s);
     void releaseAssignee();
@@ -49,4 +59,8 @@ private:
     std::string failureReason;
     Participant* assignee;
     WorkItemState* state;
+
+    // NEW: Members for other patterns
+    std::string assignmentRule;
+    std::map<std::string, std::string> data; 
 };
