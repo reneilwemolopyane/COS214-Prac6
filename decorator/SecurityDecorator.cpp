@@ -27,6 +27,11 @@ void SecurityDecorator::complete(const std::string& outcome) {
     wrapped->complete(outcome);
 }
 
+void SecurityDecorator::assign(Participant* p) {
+    check();
+    wrapped->assign(p);
+}
+
 void SecurityDecorator::cancel()   { check(); wrapped->cancel(); }
 
 WorkflowComponent* SecurityDecorator::clone() const {
