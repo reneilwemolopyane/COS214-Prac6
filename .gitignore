@@ -1,10 +1,11 @@
+# Visual Paradigm temp files
+*.lck
+*.bak_*
+.lock
+.vpprefdata/
+teamworkUser.xml
+teamwork_client/
 
-scratch/
-run_tests
-run_tests.exe
-demo
+# local build output / scratch
 build/
-.vscode/
-tests/
-third_party/
-CMakeLists.txt
+scratch/
