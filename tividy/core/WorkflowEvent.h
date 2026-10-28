@@ -1,7 +1,7 @@
 #pragma once
 /**
  * @file WorkflowEvent.h
- * @brief Immutable event passed to observers (Observer) and to the Mediator.
+ * @brief Event passed to observers (Observer) and to the Mediator.
  */
 #include <string>
 #include "tividy/core/Common.h"
@@ -12,44 +12,70 @@ class WorkflowCommand;
 /**
  * @brief What happened, to which work item, plus extra data.
  *
- * Immutable: everything is set in the constructor and only read through getters.
- * Extra information goes in the payload, e.g. payload["message"] for an error,
- * payload["assignee"] for an assignment, payload["command"] for the causing command.
+ * Two ways to build and read it, so every module can use the style it was written with:
+ * - Fields: e.type, e.workItemId, e.details, e.source, e.cause,
+ *   built with WorkflowEvent(type, source, workItemId, cause, details).
+ * - Getters and payload: e.getType(), e.getWorkItemId(), e.get("message"),
+ *   built with WorkflowEvent(type, workItemId, payload, cause, source).
  *
+ * details and payload["message"] always hold the same text.
  * getCause() gives the IncidentMonitor the command to retry (null if not caused by a command).
  * getSource() is the instance that raised it (null if raised outside an instance).
  */
-class WorkflowEvent {
-public:
+struct WorkflowEvent {
+    EventType type;               ///< What happened.
+    std::string instanceId;       ///< Id of the instance it happened in.
+    std::string workItemId;       ///< Work item involved, if any.
+    std::string timestamp;        ///< When it happened.
+    std::string details;          ///< Extra information, e.g. an error message.
+    std::string commandName;      ///< Name of the causing command, for the audit trail.
+    WorkflowInstance* source;     ///< Instance that raised the event (not owned).
+    WorkflowCommand* cause;       ///< Command that caused it, or null (not owned).
+    DataMap payload;              ///< Extra key/value data, e.g. payload["assignee"].
+
+    WorkflowEvent() : type(EVT_CREATED), source(0), cause(0) {}
+
     /**
-     * @param type What happened.
-     * @param workItemId Work item involved, empty if none.
-     * @param payload Extra key/value data.
-     * @param cause Command that caused the event, or null (not owned).
-     * @param source Instance that raised the event, or null (not owned).
+     * @brief Field style.
+     * @param t Event type.
+     * @param src Instance raising the event.
+     * @param item Work item involved.
+     * @param c Command that caused it.
+     * @param info Extra details, also stored as payload["message"].
      */
-    explicit WorkflowEvent(EventType type, const std::string& workItemId = "",
-                           const DataMap& payload = DataMap(),
-                           WorkflowCommand* cause = 0, WorkflowInstance* source = 0)
-        : type(type), workItemId(workItemId), payload(payload), cause(cause), source(source) {}
+    WorkflowEvent(EventType t, WorkflowInstance* src, const std::string& item = "",
+                  WorkflowCommand* c = 0, const std::string& info = "")
+        : type(t), workItemId(item), details(info), source(src), cause(c) {
+        if (!info.empty()) payload["message"] = info;
+    }
+
+    /**
+     * @brief Payload style.
+     * @param t What happened.
+     * @param item Work item involved, empty if none.
+     * @param data Extra key/value data; data["message"] also fills details.
+     * @param c Command that caused the event, or null (not owned).
+     * @param src Instance that raised the event, or null (not owned).
+     */
+    WorkflowEvent(EventType t, const std::string& item, const DataMap& data = DataMap(),
+                  WorkflowCommand* c = 0, WorkflowInstance* src = 0)
+        : type(t), workItemId(item), source(src), cause(c), payload(data) {
+        details = get("message");
+        instanceId = get("instance");
+        commandName = get("command");
+    }
 
     EventType getType() const { return type; }
     const std::string& getWorkItemId() const { return workItemId; }
     const DataMap& getPayload() const { return payload; }
 
-    /** @brief Payload value for @p key, or "" if missing. */
+    /** @brief Payload value for @p key, or "" if missing. "message" falls back to details. */
     std::string get(const std::string& key) const {
         DataMap::const_iterator it = payload.find(key);
-        return it == payload.end() ? "" : it->second;
+        if (it != payload.end()) return it->second;
+        return key == "message" ? details : "";
     }
 
     WorkflowCommand* getCause() const { return cause; }
     WorkflowInstance* getSource() const { return source; }
-
-private:
-    EventType type;
-    std::string workItemId;
-    DataMap payload;
-    WorkflowCommand* cause;
-    WorkflowInstance* source;
 };
