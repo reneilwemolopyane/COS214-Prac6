@@ -1,8 +1,14 @@
 #include "tividy/builder/WorkflowDefinition.h"
+#include "tividy/core/WorkflowInstance.h"
 #include <stdexcept>
 
 WorkflowDefinition::WorkflowDefinition(const std::string& id, int version)
-    : id(id), version(version), validated(false), instanceCounter(0) {}
+    : id(id),
+      version(version),
+      validated(false),
+      root(nullptr),
+      instanceCounter(0) {
+}
 
 WorkflowInstance* WorkflowDefinition::createInstance(const DataMap& data) {
 
@@ -19,7 +25,7 @@ WorkflowInstance* WorkflowDefinition::createInstance(const DataMap& data) {
 
     std::string instanceId = id + "-" + std::to_string(instanceCounter);
 
-    return new WorkflowInstance(instanceId, std::move(copy), data, version);
+    return new WorkflowInstance(instanceId, copy, data, version);
 }
 
 std::string WorkflowDefinition::getId() const{ 
@@ -82,4 +88,9 @@ const DataMap& WorkflowDefinition::getRules() const {
     
     return rules;
 
+}
+
+WorkflowDefinition::~WorkflowDefinition() {
+    
+    delete root;
 }

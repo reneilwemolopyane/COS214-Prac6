@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include "tividy/visitor/Visitor.h"
-
+class Participant;
 class WorkflowComponent : public WorkflowElement {
 public:
     WorkflowComponent() : parent(nullptr) {}
@@ -20,6 +20,10 @@ public:
     virtual bool isFinished() const = 0;         
     virtual bool isFailed() const = 0;             
     
+        /** Command actions. Decorators intercept these so security, validation
+     *  and audit also run when commands act on an item. */
+    virtual void assign(Participant*) {}
+    virtual void complete(const std::string& outcome) { complete(); }
     
     void setParent(WorkflowComponent* p) { parent = p; }
     WorkflowComponent* getParent() const { return parent; }
