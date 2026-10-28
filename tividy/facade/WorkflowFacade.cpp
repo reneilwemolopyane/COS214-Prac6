@@ -6,44 +6,37 @@ WorkflowFacade::WorkflowFacade(DefinitionRepository& repository, WorkflowEngine&
 
 void WorkflowFacade::registerDefinition(WorkflowDefinition* definition) {
 
-    repository.save(std::move(definition));
+    repository.save(definition);
 }
 
-std::string WorkflowFacade::startWorkflow(const std::string& definitionId, const DataMap& data) {
+std::string WorkflowFacade::startWorkflow(const std::string& definitionId,const DataMap& data) {
 
     WorkflowDefinition* definition = repository.find(definitionId);
 
-    if (definition == nullptr) {
-
+    if (definition == nullptr)
         throw std::out_of_range("Definition not found: " + definitionId);
 
-    }
-    if (!definition->isValidated()) {
-
-        throw std::logic_error("Definition '" + definitionId + "' is a draft and cannot be started");
-    }
+    if (!definition->isValidated())
+        throw std::logic_error("Definition is not validated: " + definitionId);
 
     WorkflowInstance* instance = definition->createInstance(data);
-
-    // Take what we still need BEFORE ownership moves to the engine.
-    WorkflowInstance* running = instance.get();
-
     std::string instanceId = instance->getId();
 
-    engine.registerInstance(std::move(instance));
+    if (!engine.registerInstance(instance)) {
+        delete instance;
+        throw std::logic_error("Could not register workflow instance: " + instanceId);
+    }
 
-    running->start();
+    if (!engine.start(instance)) {
+        // The engine owns the instance now, so do not delete it here.
+        throw std::logic_error("Could not start workflow instance: " + instanceId);
+    }
 
     return instanceId;
 }
 
-std::string WorkflowFacade::getInstanceStatus(const std::string& instanceId) {
-
-    WorkflowInstance* instance = engine.findInstance(instanceId);
-
-    if (instance == nullptr) {
-        
-        throw std::out_of_range("Instance not found: " + instanceId);
-    }
-    return instance->getStatus();
+std::string WorkflowFacade::getInstanceStatus(
+    const std::string& instanceId
+) {
+    return engine.getStatus(instanceId);
 }

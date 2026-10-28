@@ -1,5 +1,7 @@
 #include "tividy/core/WorkflowInstance.h"
 #include "tividy/command/Command.h"
+#include "tividy/composite_prototype/Stage.h"
+#include "tividy/composite_prototype/WorkItem.h"
 
 class RegistrationVisitor : public WorkflowVisitor {
     InstanceCoordinator* coord;
@@ -16,10 +18,16 @@ public:
     std::string getReport() const override { return ""; }
 };
 
-WorkflowInstance::WorkflowInstance(const std::string& id, WorkflowComponent* rootCopy, const DataMap& d)
-    : id(id), root(rootCopy), data(d), coordinator(0), processor(new CommandProcessor(this))
-{
-}
+WorkflowInstance::WorkflowInstance(const std::string& id,
+                                   WorkflowComponent* rootCopy,
+                                   const DataMap& d,
+                                   int version)
+    : id(id),
+      root(rootCopy),
+      data(d),
+      version(version),
+      coordinator(0),
+      processor(new CommandProcessor(this)) {}
 
 WorkflowInstance::~WorkflowInstance() {
     delete root;
@@ -29,6 +37,7 @@ WorkflowInstance::~WorkflowInstance() {
 
 void WorkflowInstance::start() {
     if (!root) return;
+    delete coordinator;
     coordinator = new InstanceCoordinator(0, this);
     RegistrationVisitor regVisitor(coordinator);
     root->accept(regVisitor);
@@ -62,3 +71,4 @@ InstanceMemento* WorkflowInstance::createMemento() const {
 void WorkflowInstance::restoreFromMemento(const InstanceMemento& memento) {
     this->data = memento.data;
 }
+

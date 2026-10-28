@@ -7,7 +7,7 @@ AssignmentStrategy::~AssignmentStrategy(){}
 std::vector<Participant*> AssignmentStrategy::eligible(const WorkItem& item, const std::vector<Participant*>& candidates)const{
     std::vector<Participant*> ok;
     for (size_t i = 0; i < candidates.size(); i++){
-        if (candidates[i]->hasRole(item.getRequiredRole())){
+        if (candidates[i]->hasRole(item.getRole())){
             ok.push_back(candidates[i]);
         }
     }
@@ -18,6 +18,7 @@ std::vector<Participant*> AssignmentStrategy::eligible(const WorkItem& item, con
 Participant* RoleBasedStrategy::selectParticipant(const WorkItem&, const std::vector<Participant*>& candidates){
     std::vector<Participant*> ok = eligible(item, candidates);
     return ok.empty() ? nullptr : ok[0];
+}
 AssignmentStrategy* RoleBasedStrategy::clone()const{
     return new RoleBasedStrategy(*this);
 }
@@ -27,6 +28,7 @@ std::string RoleBasedStrategy::name()const{
 
 //Shortest Queue Strategy
 Participant* ShortestQueueStrategy::selectParticipant(const WorkItem&, const std::vector<Participant*>&){
+    std::vector<Participant*>ok = eligible(item, candidates);
     if (ok.empty()) return nullptr;
     Participant* best = ok[0];
     for (int i = 1; i < (int)ok.size(); i++)
@@ -48,7 +50,7 @@ Participant* RoundRobinStrategy::selectParticipant(const WorkItem& item, const s
     return ok[lastIndex];
 }
 
-AssignmentStrategy* RoundRobinStrategy::clone()clone{
+AssignmentStrategy* RoundRobinStrategy::clone()const{
     return new RoundRobinStrategy(*this);
 }
 std::string RoundRobinStrategy::name()const{

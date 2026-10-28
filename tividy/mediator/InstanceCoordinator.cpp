@@ -3,7 +3,7 @@
 #include "tividy/core/Participant.h"
 #include "tividy/strategy/WorkAssigner.h"
 #include "tividy/composite_prototype/WorkItem.h"
-#include "tividy/observer/ObserverPattern.h"
+#include "tividy/observer/Observers.h"
 
 InstanceCoordinator::InstanceCoordinator(WorkAssigner* a, WorkflowSubject* s)  : assigner(a), events(s), started(false){
     if (assigner) assigner->setMediator(this);
@@ -17,13 +17,13 @@ void InstanceCoordinator::publish(const WorkflowEvent& e) const {
 
 void InstanceCoordinator::notify(WorkflowColleague*, const WorkflowEvent& e){
     publish(e);                                  // log first: audit order stays true
-    switch (e.getType()) {
-        case EVT_COMPLETED: handleCompleted(e.getWorkItemId()); break;
+    switch (e.Type) {
+        case EVT_COMPLETED: handleCompleted(e.workItemId); break;
         case EVT_REJECTED:
-        case EVT_CANCELLED: handleRejection(e.getWorkItemId()); break;
+        case EVT_CANCELLED: handleRejection(e.workItemId); break;
         case EVT_FAILED:
         case EVT_TIMED_OUT:
-        case EVT_ESCALATED: handleEscalation(e.getWorkItemId()); break;
+        case EVT_ESCALATED: handleEscalation(e.workItemId); break;
         default: break;   // CREATED, ASSIGNED, STARTED, COMPENSATED: announcements only
     }
 }
@@ -49,7 +49,7 @@ void InstanceCoordinator::addParticipant(Participant* p){
 void InstanceCoordinator::start() {
     if(started) return;
     started = true;
-    publish(WorkflowEvent(EVT_CREATED, ""));
+    publish(WorkflowEvent(EVT_CREATED, nullptr));
     releaseAvailableItems();
 }
 
@@ -73,10 +73,8 @@ void InstanceCoordinator::releaseAvailableItems() {
         it->makeAvailable();
         Participant* p = assigner ? assigner->assign(*it, pool) : nullptr;
         if (p) {                                  // null => assigner already notified FAILED
-            it->setAssignee(p);
-            DataMap d;
-            d["assignee"] = p->getName();
-            publish(WorkflowEvent(EVT_ASSIGNED, it->getId(), d));
+            it->assign(p);
+            publish(WorkflowEvent(EVT_ASSIGNED, nullptr it->getId(), nullptr,  "assignee: " + p->getName()));
         }
     }
 }
@@ -124,9 +122,7 @@ void InstanceCoordinator::closeItem(const std::string& id, const std::string& re
         WorkItem* dep = findItem(dependencies[i].item);
         if (!dep || !dep->isPending()) continue;
         dep->markEscalated();
-        DataMap d;
-        d["reason"] = reason;
-        publish(WorkflowEvent(EVT_ESCALATED, dep->getId(), d));
+        publish(WorkflowEvent(EVT_ESCALATED, nullptr, dep->getId(), nullptr, reason));
         closeItem(dep->getId(), "prerequisite " + dep->getId() + " was escalated");
     }
 }
