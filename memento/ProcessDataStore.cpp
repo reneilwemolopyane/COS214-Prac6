@@ -2,18 +2,18 @@
 
 ProcessDataStore::ProcessDataStore(size_t maxThreshold) : threshold(maxThreshold) {}
 
-void ProcessDataStore::append(WorkflowMemento* mem) {
+void ProcessDataStore::append(InstanceMemento* mem) {
     if(mem){
     log.push_back(mem);
     }
 
 }                  
-WorkflowMemento*  ProcessDataStore::undo(){ 
+InstanceMemento* ProcessDataStore::undo(){ 
      if (log.empty()){
       return nullptr;
      }
 
-        WorkflowMemento* latest = log.back();
+        InstanceMemento* latest = log.back();
         log.pop_back();
         
         return latest;
@@ -21,10 +21,10 @@ WorkflowMemento*  ProcessDataStore::undo(){
 }  
 
     ProcessDataStore::~ProcessDataStore(){
-      for (WorkflowMemento* mem : log) {
+    for (InstanceMemento* mem : log) {
             delete mem;
         }
-        for (WorkflowMemento* mem : backupStorage) {
+        for (InstanceMemento* mem : backupStorage) {
         delete mem;
        }
          log.clear();
@@ -42,10 +42,10 @@ void ProcessDataStore::backupstorage(){
     }
 }
 
-const std::vector<WorkflowMemento*>& ProcessDataStore::getLog() const { 
+const std::vector<InstanceMemento*>& ProcessDataStore::getLog() const { 
     return log; 
 }
-const std::vector<WorkflowMemento*>& ProcessDataStore::getBackupStorage() const {
+const std::vector<InstanceMemento*>& ProcessDataStore::getBackupStorage() const {
      return backupStorage; 
     }
 
