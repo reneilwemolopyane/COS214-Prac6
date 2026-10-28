@@ -2,7 +2,12 @@
 #include <stdexcept>
 
 WorkflowDefinition::WorkflowDefinition(const std::string& id, int version)
-    : id(id), version(version), validated(false), instanceCounter(0) {}
+    : id(id),
+      version(version),
+      validated(false),
+      root(nullptr),
+      instanceCounter(0) {
+}
 
 WorkflowInstance* WorkflowDefinition::createInstance(const DataMap& data) {
 
@@ -13,7 +18,7 @@ WorkflowInstance* WorkflowDefinition::createInstance(const DataMap& data) {
     }
 
     // Deep copy of the template
-    WorkComponent* copy = root->clone();
+    WorkflowComponent* copy = root->clone();
 
     ++instanceCounter;
 
@@ -40,7 +45,7 @@ bool WorkflowDefinition::isValidated() const{
 
 }
 
-void WorkflowDefinition::setRoot(WorkComponent* root){ 
+void WorkflowDefinition::setRoot(WorkflowComponent* root){ 
     
     //What is move??
     //this->root = std::move(root);
@@ -54,7 +59,7 @@ void WorkflowDefinition::markValidated(){
 
 }
 
-const WorkComponent* WorkflowDefinition::getRoot() const { 
+const WorkflowComponent* WorkflowDefinition::getRoot() const { 
      //get()??
     //return root.get(); 
 
@@ -82,4 +87,9 @@ const DataMap& WorkflowDefinition::getRules() const {
     
     return rules;
 
+}
+
+WorkflowDefinition::~WorkflowDefinition() {
+    
+    delete root;
 }
