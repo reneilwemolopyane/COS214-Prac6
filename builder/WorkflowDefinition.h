@@ -6,23 +6,25 @@
 #include <utility>
 #include <vector>
 #include "tividy/core/Common.h"
-#include "tividy/composite_prototype/WorkComponent.h"
+#include "tividy/composite_prototype/WorkflowComponent.h"
 #include "tividy/core/WorkflowInstance.h"
 
 class WorkflowInstance;
-class WorkComponent;
+class WorkflowComponent;
 /**
  * @file WorkflowDefinition.h
  * @brief The reusable template of a process.
  *
  * GoF roles: Product (Builder) and Client (Prototype).
  *
- * A definition owns a template tree of WorkComponent objects. It never runs;
+ * A definition owns a template tree of WorkflowComponent objects. It never runs;
  * createInstance() deep-copies the template so every WorkflowInstance owns its
  * own independent structure.
  */
 class WorkflowDefinition {
 public:
+
+    ~WorkflowDefinition();
     /**
      * @brief Create an empty, not-yet-validated definition.
      * @param id      Unique identifier, e.g. "motor-claim".
@@ -46,12 +48,12 @@ public:
     bool isValidated() const;
 
     /// Take ownership of the template root (called by builders).
-    void setRoot(WorkComponent* root);
+    void setRoot(WorkflowComponent* root);
     /// Mark the definition as validated (called by the validating builder).
     void markValidated();
 
     /// @return The template root (read only), or nullptr if none.
-    const WorkComponent* getRoot() const;
+    const WorkflowComponent* getRoot() const;
 
     /// Record that @p to may only start after @p from has finished.
     void addDependency(const std::string& from, const std::string& to);
@@ -72,13 +74,17 @@ private:
 
     bool validated;
 
-    WorkComponent* root;
+    WorkflowComponent* root;
 
     std::vector<std::pair<std::string, std::string> > dependencies;
 
     DataMap rules;
 
     int instanceCounter;
+
+    WorkflowDefinition(const WorkflowDefinition&) = delete;
+
+    WorkflowDefinition& operator=(const WorkflowDefinition&) = delete;
 };
 
 #endif
