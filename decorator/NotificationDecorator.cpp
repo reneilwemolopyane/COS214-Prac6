@@ -7,16 +7,24 @@ void NotificationDecorator::tell(const std::string& event) {
     if (sink) sink(event + ": " + wrapped->getName());
 }
 
-void NotificationDecorator::start()    { 
-    wrapped->start();    tell("started"); 
+void NotificationDecorator::start() {
+    wrapped->start();
+    tell("started");
 }
 
-void NotificationDecorator::complete() { 
-    wrapped->complete(); tell("completed"); 
+void NotificationDecorator::complete() {
+    wrapped->complete();
+    tell("completed");
 }
 
-void NotificationDecorator::cancel()   { 
-    wrapped->cancel();   tell("cancelled"); 
+void NotificationDecorator::complete(const std::string& outcome) {
+    wrapped->complete(outcome);
+    tell("completed (" + outcome + ")");
+}
+
+void NotificationDecorator::cancel() {
+    wrapped->cancel();
+    tell("cancelled");
 }
 
 WorkflowComponent* NotificationDecorator::clone() const {

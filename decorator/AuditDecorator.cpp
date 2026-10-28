@@ -21,10 +21,22 @@ void AuditDecorator::complete() {
     catch (...) { log("complete FAILED"); throw; }
 }
 
+void AuditDecorator::complete(const std::string& outcome) {
+    log("complete(" + outcome + ")");
+    try { wrapped->complete(outcome); }
+    catch (...) { log("complete(" + outcome + ") FAILED"); throw; }
+}
+
 void AuditDecorator::cancel() {
     log("cancel");
     try { wrapped->cancel(); }
     catch (...) { log("cancel FAILED"); throw; }
+}
+
+void AuditDecorator::assign(Participant* p) {
+    log("assign");
+    try { wrapped->assign(p); }
+    catch (...) { log("assign FAILED"); throw; }
 }
 
 const std::vector<std::string>& AuditDecorator::history() const { return trail; }

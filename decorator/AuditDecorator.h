@@ -17,7 +17,9 @@ public:
 
     void start();
     void complete();
+    void complete(const std::string& outcome) override;
     void cancel();
+    void assign(Participant* p) override;
 
     /** @return the entries recorded by this decorator */
     const std::vector<std::string>& history() const;

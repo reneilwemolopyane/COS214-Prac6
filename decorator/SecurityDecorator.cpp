@@ -19,17 +19,15 @@ void SecurityDecorator::check() const {
                                  "' not permitted (needs '" + requiredRole + "')");
 }
 
-void SecurityDecorator::start()    { 
-    check(); wrapped->start(); 
+void SecurityDecorator::start()    { check(); wrapped->start(); }
+void SecurityDecorator::complete() { check(); wrapped->complete(); }
+
+void SecurityDecorator::complete(const std::string& outcome) {
+    check();
+    wrapped->complete(outcome);
 }
 
-void SecurityDecorator::complete() { 
-    check(); wrapped->complete(); 
-}
-
-void SecurityDecorator::cancel()   { 
-    check(); wrapped->cancel(); 
-}
+void SecurityDecorator::cancel()   { check(); wrapped->cancel(); }
 
 WorkflowComponent* SecurityDecorator::clone() const {
     SecurityDecorator* c = new SecurityDecorator(wrapped->clone(), requiredRole, actorRole);

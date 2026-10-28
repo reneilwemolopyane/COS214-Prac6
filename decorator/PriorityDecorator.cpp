@@ -10,9 +10,7 @@ std::string PriorityDecorator::displayName() const {
     return os.str();
 }
 
-int PriorityDecorator::getPriority() const { 
-    return priority; 
-}
+int PriorityDecorator::getPriority() const { return priority; }
 
 long PriorityDecorator::adjustDeadline(long baseSeconds) const {
     return baseSeconds / (priority < 1 ? 1 : priority);

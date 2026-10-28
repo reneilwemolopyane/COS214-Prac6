@@ -3,13 +3,13 @@
 WorkItemDecorator::WorkItemDecorator(WorkflowComponent* w) : wrapped(w) {
     if (wrapped) wrapped->setParent(this);   // wrapped item reports to the decorator
 }
-WorkItemDecorator::~WorkItemDecorator() { 
-    delete wrapped; 
+
+WorkItemDecorator::~WorkItemDecorator() {
+    delete wrapped;
 }
 
 void WorkItemDecorator::start()    { 
     wrapped->start(); 
-
 }
 
 void WorkItemDecorator::complete() { 
@@ -17,13 +17,11 @@ void WorkItemDecorator::complete() {
 }
 
 void WorkItemDecorator::cancel()   { 
-    wrapped->cancel(); 
-}
+    wrapped->cancel(); }
 
 bool WorkItemDecorator::isComplete() const { 
     return wrapped->isComplete(); 
 }
-
 std::string WorkItemDecorator::getName() const { 
     return wrapped->getName(); 
 }
@@ -32,6 +30,13 @@ void WorkItemDecorator::accept(WorkflowVisitor& v) {
     wrapped->accept(v); 
 }
 
+void WorkItemDecorator::assign(Participant* p) { 
+    wrapped->assign(p); 
+}
+
+void WorkItemDecorator::complete(const std::string& outcome) { 
+    wrapped->complete(outcome); 
+}
 
 void WorkItemDecorator::activate()         { 
     wrapped->activate(); 
