@@ -27,6 +27,7 @@ public:
     void start();
     void complete();
     void complete(const std::string& outcome) override;
+    void assign(Participant* p) override;
     void cancel();
     WorkflowComponent* clone() const;
 private:
