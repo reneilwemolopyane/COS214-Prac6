@@ -1,7 +1,7 @@
 #ifndef WORKFLOWFACADE_H
 #define WORKFLOWFACADE_H
 
-#include <memory>
+//#include <memory>
 #include <string>
 #include "tividy/facade/DefinitionRepository.h"
 #include "tividy/builder/WorkflowDefinition.h"

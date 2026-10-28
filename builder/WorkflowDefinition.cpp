@@ -2,7 +2,12 @@
 #include <stdexcept>
 
 WorkflowDefinition::WorkflowDefinition(const std::string& id, int version)
-    : id(id), version(version), validated(false), instanceCounter(0) {}
+    : id(id),
+      version(version),
+      validated(false),
+      root(nullptr),
+      instanceCounter(0) {
+}
 
 WorkflowInstance* WorkflowDefinition::createInstance(const DataMap& data) {
 
@@ -82,4 +87,9 @@ const DataMap& WorkflowDefinition::getRules() const {
     
     return rules;
 
+}
+
+WorkflowDefinition::~WorkflowDefinition() {
+    
+    delete root;
 }

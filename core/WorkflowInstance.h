@@ -9,20 +9,29 @@
 
 class WorkflowInstance : public WorkflowSubject, public WorkflowElement {
 public:
-    WorkflowInstance(const std::string& id, WorkflowComponent* rootCopy, const DataMap& d);
+    WorkflowInstance(const std::string& id,
+                     WorkflowComponent* rootCopy,
+                     const DataMap& d,
+                     int version);
+
     ~WorkflowInstance();
 
-    void start();                                       
-    void accept(WorkflowVisitor&);                      
-    InstanceMemento* createMemento() const;  
-    void restoreFromMemento(const InstanceMemento&); 
+    void start();
+    void accept(WorkflowVisitor&);
+    InstanceMemento* createMemento() const;
+    void restoreFromMemento(const InstanceMemento&);
+
     std::string getId() const { return id; }
+    int getVersion() const { return version; }
+
     CommandProcessor* getProcessor() { return processor; }
     InstanceCoordinator* getCoordinator() { return coordinator; }
+
 private:
-    std::string id; 
-    WorkflowComponent* root; 
-    DataMap data; 
-    InstanceCoordinator* coordinator; 
+    std::string id;
+    WorkflowComponent* root;
+    DataMap data;
+    int version;
+    InstanceCoordinator* coordinator;
     CommandProcessor* processor;
 };

@@ -2,7 +2,7 @@
  * @file WorkflowEngine.cpp
  * @brief Implementation of WorkflowEngine.
  */
-#include "tividy/facade/WorkflowEngine.h"
+#include "tividy/command/WorkflowEngine.h"
 #include "tividy/command/Command.h"
 #include "tividy/command/CommandProcessor.h"
 
