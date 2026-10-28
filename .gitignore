@@ -1,8 +1,11 @@
+# Visual Paradigm temp files
 *.lck
 *.bak_*
 .lock
-*.lck
-*.bak_*
 .vpprefdata/
 teamworkUser.xml
 teamwork_client/
+
+# local build output / scratch
+build/
+scratch/
