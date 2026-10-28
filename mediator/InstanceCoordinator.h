@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "WorkflowMediator.h"
+#include "../mediator/WorkflowMediator.h"
 
 class WorkItem;
 class Participant;
