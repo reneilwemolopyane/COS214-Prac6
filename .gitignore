@@ -1,10 +1,15 @@
+# Visual Paradigm temp files
 *.lck
 *.bak_*
 .lock
-*.lck
-*.bak_*
 .vpprefdata/
 teamworkUser.xml
 teamwork_client/
+<<<<<<< HEAD
 tests/run_tests.exe
 build-tests
+
+# local build output / scratch
+build/
+scratch/
+origin/dev
