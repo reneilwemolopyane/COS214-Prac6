@@ -45,6 +45,8 @@ public:
 
     std::string getId() const { return id; }
     std::string getRole() const { return role; }
+    void setRole(const std::string& r);
+    void setAssignmentRule(const std::string& r);
     Participant* getAssignee() const { return assignee; }
     std::string getOutcome() const { return outcome; }
     std::string getAssignmentRule() const { return assignmentRule; } // NEW
