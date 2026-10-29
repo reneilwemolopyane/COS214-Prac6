@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 #include "tividy/observer/ObserverPattern.h"
 #include "tividy/visitor/Visitor.h"
 #include "tividy/composite_prototype/WorkflowComponent.h"
@@ -17,6 +18,7 @@ public:
     ~WorkflowInstance();
 
     void start();
+    void addDependency(const std::string& prerequisite, const std::string& item);
     void raiseEvent(EventType type, const std::string& workItemId = "",
                     WorkflowCommand* cause = 0, const std::string& message = "");
     void accept(WorkflowVisitor&);
@@ -34,6 +36,7 @@ private:
     WorkflowComponent* root;
     DataMap data;
     int version;
+    std::vector<std::pair<std::string,std::string>> dependencies;
     InstanceCoordinator* coordinator;
     CommandProcessor* processor;
 };
