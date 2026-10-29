@@ -60,8 +60,7 @@ public:
 
     bool registerItem(WorkItem* item);
 
-    void addDependency(const std::string& item,
-                       const std::string& prerequisite);
+    void addDependency(const std::string& prerequisite, const std::string& item);
 
     void addParticipant(Participant* participant);
 
