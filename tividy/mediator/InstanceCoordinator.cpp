@@ -1,128 +1,183 @@
-// InstanceCoordinator.cpp
 #include "tividy/mediator/InstanceCoordinator.h"
 #include "tividy/core/Participant.h"
 #include "tividy/strategy/WorkAssigner.h"
 #include "tividy/composite_prototype/WorkItem.h"
 #include "tividy/observer/Observers.h"
 
-InstanceCoordinator::InstanceCoordinator(WorkAssigner* a, WorkflowSubject* s)  : assigner(a), events(s), started(false){
+InstanceCoordinator::InstanceCoordinator(WorkAssigner* a, WorkflowSubject* s)
+    : assigner(a), events(s), started(false) {
     if (assigner) assigner->setMediator(this);
 }
 
-InstanceCoordinator::~InstanceCoordinator() {}   // owns nothing
+InstanceCoordinator::~InstanceCoordinator() {}
 
-void InstanceCoordinator::publish(const WorkflowEvent& e) const {
-    if (events) events->notifyObservers(e);
+void InstanceCoordinator::publish(const WorkflowEvent& event) const {
+    if (events) events->notifyObservers(event);
 }
 
-void InstanceCoordinator::notify(WorkflowColleague*, const WorkflowEvent& e){
-    publish(e);                                  // log first: audit order stays true
-    switch (e.Type) {
-        case EVT_COMPLETED: handleCompleted(e.workItemId); break;
+void InstanceCoordinator::notify(WorkflowColleague* sender, const WorkflowEvent& event) {
+    (void)sender;
+    publish(event);
+
+    switch (event.type) {
+        case EVT_COMPLETED:
+            handleCompleted(event.workItemId);
+            break;
+
         case EVT_REJECTED:
-        case EVT_CANCELLED: handleRejection(e.workItemId); break;
+        case EVT_CANCELLED:
+            handleRejection(event.workItemId);
+            break;
+
         case EVT_FAILED:
         case EVT_TIMED_OUT:
-        case EVT_ESCALATED: handleEscalation(e.workItemId); break;
-        default: break;   // CREATED, ASSIGNED, STARTED, COMPENSATED: announcements only
+        case EVT_ESCALATED:
+            handleEscalation(event.workItemId);
+            break;
+
+        default:
+            break;
     }
 }
 
 bool InstanceCoordinator::registerItem(WorkItem* item) {
     if (!item || findItem(item->getId())) return false;
+
     items.push_back(item);
     item->setMediator(this);
     return true;
 }
 
-void InstanceCoordinator::addDependency(const std::string& prerequisite, const std::string& item){
-    Dependency d;
-    d.item = item;
-    d.prerequisite = prerequisite;
-    dependencies.push_back(d);
+void InstanceCoordinator::addDependency(const std::string& prerequisite, const std::string& item) {
+    if (item == prerequisite || !findItem(item) || !findItem(prerequisite)) return;
+
+    for (size_t i = 0; i < dependencies.size(); i++) {
+        if (dependencies[i].item == item &&
+            dependencies[i].prerequisite == prerequisite) {
+            return;
+        }
+    }
+
+    dependencies.push_back({item, prerequisite});
 }
 
-void InstanceCoordinator::addParticipant(Participant* p){
-    if (p) pool.push_back(p);
+void InstanceCoordinator::addParticipant(Participant* participant) {
+    if (participant) pool.push_back(participant);
 }
 
 void InstanceCoordinator::start() {
-    if(started) return;
+    if (started) return;
+
     started = true;
     publish(WorkflowEvent(EVT_CREATED, nullptr));
     releaseAvailableItems();
 }
 
-bool InstanceCoordinator::dependenciesMet(const std::string& itemId)const{
-    for (size_t i = 0; i < dependencies.size(); i++)
+bool InstanceCoordinator::dependenciesMet(const std::string& itemId) const {
+    for (size_t i = 0; i < dependencies.size(); i++) {
         if (dependencies[i].item == itemId &&
-            completedItems.find(dependencies[i].prerequisite) == completedItems.end())
+            completedItems.find(dependencies[i].prerequisite) == completedItems.end()) {
             return false;
+        }
+    }
+
     return true;
 }
 
-bool InstanceCoordinator::isFinished()const{
+bool InstanceCoordinator::isFinished() const {
     return !items.empty() && completedItems.size() + closedItems.size() == items.size();
+}
+
+bool InstanceCoordinator::allCompleted() const {
+    return !items.empty() && completedItems.size() == items.size();
 }
 
 void InstanceCoordinator::releaseAvailableItems() {
     for (size_t i = 0; i < items.size(); i++) {
-        WorkItem* it = items[i];
-        if (!it->isPending() || !dependenciesMet(it->getId())) continue;
+        WorkItem* item = items[i];
 
-        it->makeAvailable();
-        Participant* p = assigner ? assigner->assign(*it, pool) : nullptr;
-        if (p) {                                  // null => assigner already notified FAILED
-            it->assign(p);
-            publish(WorkflowEvent(EVT_ASSIGNED, nullptr it->getId(), nullptr,  "assignee: " + p->getName()));
+        if (!item->isPending() || !dependenciesMet(item->getId())) continue;
+
+        item->makeAvailable();
+
+        Participant* participant = assigner ? assigner->assign(*item, pool) : nullptr;
+
+        if (participant) {
+            item->assign(participant);
+
+            publish(WorkflowEvent(
+                EVT_ASSIGNED,
+                nullptr,
+                item->getId(),
+                nullptr,
+                "assignee: " + participant->getName()
+            ));
         }
     }
 }
 
-std::vector<WorkItem*> InstanceCoordinator::getAvailableItems()const{
-    std::vector<WorkItem*> out;
-    for (size_t i = 0; i < items.size(); i++)
-        if (items[i]->isAvailable()) out.push_back(items[i]);
-    return out;
+std::vector<WorkItem*> InstanceCoordinator::getAvailableItems() const {
+    std::vector<WorkItem*> result;
+
+    for (size_t i = 0; i < items.size(); i++) {
+        if (items[i]->isAvailable()) result.push_back(items[i]);
+    }
+
+    return result;
 }
 
-bool InstanceCoordinator::allCompleted()const{
-    return !items.empty() && completedItems.size() == items.size();
-}
-
-WorkItem* InstanceCoordinator::findItem(const std::string& id)const{
-    for (size_t i = 0; i < items.size(); i++){
+WorkItem* InstanceCoordinator::findItem(const std::string& id) const {
+    for (size_t i = 0; i < items.size(); i++) {
         if (items[i]->getId() == id) return items[i];
     }
+
     return nullptr;
 }
 
-void InstanceCoordinator::handleCompleted(const std::string& id){
+void InstanceCoordinator::handleCompleted(const std::string& id) {
+    if (!findItem(id) || closedItems.count(id)) return;
+
     completedItems.insert(id);
-    releaseAvailableItems();                      
+    releaseAvailableItems();
 }
 
-void InstanceCoordinator::handleRejection(const std::string& id){
-   closeItem(id, "prerequisite " + id + " was closed") ;                 
+void InstanceCoordinator::handleRejection(const std::string& id) {
+    closeItem(id, "prerequisite " + id + " was rejected or cancelled");
 }
 
-void InstanceCoordinator::handleEscalation(const std::string& id){
-    WorkItem* it = findItem(id);
-    if (it && closedItems.find(id) == closedItems.end()){
-        if (it) it->markEscalated();
-    }
+void InstanceCoordinator::handleEscalation(const std::string& id) {
+    WorkItem* item = findItem(id);
+
+    if (!item || closedItems.count(id)) return;
+
+    item->markEscalated();
     closeItem(id, "prerequisite " + id + " was escalated");
-    
 }
 
 void InstanceCoordinator::closeItem(const std::string& id, const std::string& reason) {
-   if(!closedItems.insert(id).second) return;
-   for (size_t i = 0; i < dependencies.size(); i++) {
+    if (completedItems.count(id) || !closedItems.insert(id).second) return;
+
+    for (size_t i = 0; i < dependencies.size(); i++) {
         if (dependencies[i].prerequisite != id) continue;
-        WorkItem* dep = findItem(dependencies[i].item);
-        if (!dep || !dep->isPending()) continue;
-        dep->markEscalated();
-        publish(WorkflowEvent(EVT_ESCALATED, nullptr, dep->getId(), nullptr, reason));
-        closeItem(dep->getId(), "prerequisite " + dep->getId() + " was escalated");
+
+        WorkItem* dependent = findItem(dependencies[i].item);
+
+        if (!dependent || !dependent->isPending() ||
+            completedItems.count(dependent->getId()) ||
+            closedItems.count(dependent->getId())) {
+            continue;
+        }
+
+        dependent->markEscalated();
+
+        publish(WorkflowEvent(
+            EVT_ESCALATED,
+            nullptr,
+            dependent->getId(),
+            nullptr,
+            reason
+        ));
+
+        closeItem(dependent->getId(), "prerequisite " + dependent->getId() + " was escalated");
     }
 }
