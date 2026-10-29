@@ -47,9 +47,7 @@ class InstanceCoordinator : public WorkflowMediator{
        InstanceCoordinator& operator=(const InstanceCoordinator&) = delete;
  
        /** @brief Mediator entry point: publish first, then react */
-
-       void notify(Colleague* sender, WorkflowEvent event, const std::string& itemId) override;
-
+       void notify(WorkflowColleague* sender, const WorkflowEvent& event) override;
        /** @brief Adds an item and makes this coordinator its mediator. @return false if null or duplicate id */
        void registerItem(WorkItem* item);          
        void addDependency(const std::string& item, const std::string& prerequisite); 
