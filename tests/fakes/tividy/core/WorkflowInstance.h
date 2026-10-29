@@ -10,6 +10,7 @@ public:
         : id_(id), root_(root), data_(data), version_(definitionVersion), status_("Created") {}
     ~WorkflowInstance() { delete root_; }
     void start() { status_ = "Running"; }
+    void addDependency(const std::string&, const std::string&) {}
     const std::string& getId() const { return id_; }
     std::string getStatus() const { return status_; }
 private:
