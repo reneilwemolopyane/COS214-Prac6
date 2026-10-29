@@ -26,9 +26,14 @@ std::string WorkItemDecorator::getName() const {
     return wrapped->getName(); 
 }
 
-void WorkItemDecorator::accept(WorkflowVisitor& v) { 
-    wrapped->accept(v); 
+void WorkItemDecorator::accept(WorkflowVisitor& v) {
+    v.visitDecorator(*this);   // let visitors see this layer
+    wrapped->accept(v);        // then reach the real WorkItem
 }
+
+void WorkItemDecorator::reject(const std::string& reason) { wrapped->reject(reason); }
+
+bool WorkItemDecorator::isOverdue() const { return wrapped->isOverdue(); }
 
 void WorkItemDecorator::assign(Participant* p) { 
     wrapped->assign(p); 
