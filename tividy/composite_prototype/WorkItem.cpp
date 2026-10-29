@@ -87,7 +87,7 @@ void WorkItem::resume()  { state->resume(*this); }
 
 
 
-void WorkItem::activate() { makeAvailable(); }
+void WorkItem::activate() { if (isPending()) makeAvailable(); }
 
 bool WorkItem::isComplete() const { return state == CompletedState::instance(); }
 bool WorkItem::isFinished() const { return state->isFinal(); }
