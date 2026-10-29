@@ -31,7 +31,8 @@ public:
     void activate() override;
     bool isFinished() const override;
     bool isFailed() const override;
-
+    void reject(const std::string& reason) override;
+    bool isOverdue() const override;
     /** The wrapped item reports to this decorator, which relays the
      *  notification to its own parent as the decorated item. */
     void childFinished(WorkflowComponent& child) override;
