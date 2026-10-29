@@ -3,6 +3,7 @@
 // #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest/doctest.h"
 
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
