@@ -1,10 +1,6 @@
 #pragma once
 
-<<<<<<< HEAD:mediator/WorkflowMediator.h
-#include "../core/WorkflowEvent.h"
-=======
 #include "tividy/core/WorkflowEvent.h"
->>>>>>> e4fd11442553d70b81b0be8c4c09ca7a6b130ef9:tividy/mediator/WorkflowMediator.h
 class WorkflowColleague;
 
 /** @brief Mediator interface: colleagues talk to this, never to each other */
