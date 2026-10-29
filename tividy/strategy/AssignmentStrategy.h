@@ -12,7 +12,7 @@ class Participant;
  */
 class AssignmentStrategy {
   public:
-    virtual ~AssignmentStrategy()
+    virtual ~AssignmentStrategy();
     /** @return the chosen participant, or nullptr if nobody is eligible */
     virtual Participant* selectParticipant(const WorkItem& item, const std::vector<Participant*>&) = 0;
 
