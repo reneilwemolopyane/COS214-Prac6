@@ -35,12 +35,19 @@ WorkflowInstance::~WorkflowInstance() {
     delete processor;
 }
 
+void WorkflowInstance::addDependency(const std::string& prerequisite, const std::string& item) {
+    dependencies.push_back(std::make_pair(prerequisite, item));
+}
+
 void WorkflowInstance::start() {
     if (!root) return;
     delete coordinator;
     coordinator = new InstanceCoordinator(0, this);
     RegistrationVisitor regVisitor(coordinator);
     root->accept(regVisitor);
+    for (const auto& dep : dependencies) {
+        coordinator->addDependency(dep.first, dep.second);
+    }
     coordinator->start();
     root->start();
 }
@@ -65,10 +72,11 @@ InstanceMemento* WorkflowInstance::createMemento() const {
     InstanceMemento* m = new InstanceMemento();
     m->data = this->data;
     m->stateSnapshot = "SNAPSHOT";
+    m->version = this->version;
     return m;
 }
 
 void WorkflowInstance::restoreFromMemento(const InstanceMemento& memento) {
     this->data = memento.data;
+    this->version = memento.version;
 }
-

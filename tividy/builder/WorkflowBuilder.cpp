@@ -25,6 +25,8 @@ void WorkflowBuilder::setIdentity(const std::string& id, int version) {
 
 void WorkflowBuilder::reset() {
 
+    delete product;
+
     Stage* root(new Stage("root"));
 
     rootStage = root;
@@ -51,7 +53,9 @@ void WorkflowBuilder::appendItem(const std::string& name, const std::string& rol
     {
         appendStage("Default");
     }
-    currentStage->add(new WorkItem(name, role));
+    WorkItem* item = new WorkItem(name, name);
+    item->setRole(role);
+    currentStage->add(item);
 }
 
 WorkflowDefinition* WorkflowBuilder::release() {
