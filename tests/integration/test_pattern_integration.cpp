@@ -210,3 +210,16 @@ TEST_CASE("Cloning a decorated stage gives an independent copy") {
     CHECK_FALSE(stage.isFinished());
     delete copy;
 }
+
+TEST_CASE("WorkItem role and assignment rule survive cloning") {
+    WorkItem item("w1", "Inspect damage");
+    item.setRole("Assessor");
+    item.setAssignmentRule("roundRobin");
+
+    std::unique_ptr<WorkflowComponent> copy(item.clone());
+    WorkItem* c = dynamic_cast<WorkItem*>(copy.get());
+
+    REQUIRE(c != 0);
+    CHECK(c->getRole() == "Assessor");
+    CHECK(c->getAssignmentRule() == "roundRobin");
+}
