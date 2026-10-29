@@ -10,6 +10,7 @@ public:
     static WorkItemState* instance();
     void makeAvailable(WorkItem&);
     void cancel(WorkItem&);
+    bool isCreated() const override { return true; }
 };
 
 class AvailableState : public WorkItemState {
@@ -18,6 +19,7 @@ public:
     static WorkItemState* instance();
     void assign(WorkItem&);
     void cancel(WorkItem&);
+    bool isAvailable() const override { return true; }
 };
 
 class AssignedState : public WorkItemState {

@@ -126,3 +126,26 @@ add_test(NAME IntegrationTests COMMAND IntegrationTests)
 
 # ===== Command + Observer tests =====
 add_subdirectory(tests/command_observer)
+
+# ===== Mediator + Strategy + State tests =====
+add_executable(MediatorStrategyStateTests
+    tests/test_mediator_strategy_state.cpp
+    tividy/mediator/InstanceCoordinator.cpp
+    tividy/mediator/WorkflowMediator.cpp
+    tividy/strategy/AssignmentStrategy.cpp
+    tividy/strategy/WorkAssigner.cpp
+    tividy/composite_prototype/WorkItem.cpp
+    tividy/composite_prototype/Stage.cpp
+    tividy/state/WorkItemState.cpp
+    tividy/state/States.cpp
+    tividy/core/Participant.cpp
+    tividy/observer/ObserverPattern.cpp 
+
+
+)
+target_include_directories(MediatorStrategyStateTests PRIVATE
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/tividy
+    ${DOCTEST_DIR}
+)
+add_test(NAME MediatorStrategyStateTests COMMAND MediatorStrategyStateTests)
