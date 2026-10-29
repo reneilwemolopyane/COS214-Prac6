@@ -1,8 +1,16 @@
+# Visual Paradigm temp files
 *.lck
 *.bak_*
 .lock
-*.lck
-*.bak_*
 .vpprefdata/
 teamworkUser.xml
 teamwork_client/
+
+# build output
+build/
+build-tests/
+scratch/
+sandbox_test/
+tividy_app
+tividy_app.exe
+*.exe
