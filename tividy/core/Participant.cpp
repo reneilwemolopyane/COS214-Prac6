@@ -19,12 +19,12 @@ const std::set<std::string>& Participant::getRoles()const{
     return roles;
 }
 
-int getWorkload()const{
+int Participant::getWorkload()const{
     return workload;
 }
-void itemAssigned(){
+void Participant::itemAssigned(){
     ++workload;
 }
-void itemReleased(){
+void Participant::itemReleased(){
     if(workload > 0) --workload;
 }
