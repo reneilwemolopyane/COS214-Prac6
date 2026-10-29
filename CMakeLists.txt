@@ -196,3 +196,53 @@ target_include_directories(MediatorStrategyStateTests PRIVATE
     ${DOCTEST_DIR}
 )
 add_test(NAME MediatorStrategyStateTests COMMAND MediatorStrategyStateTests)
+
+add_executable(AllPatternsIntegrationTests
+    IntegrationTests/main.cpp
+    IntegrationTests/AllPatternsIntegrationTests.cpp
+
+    tividy/builder/WorkflowBuilder.cpp
+    tividy/builder/WorkflowDefinition.cpp
+    tividy/builder/DraftWorkflowBuilder.cpp
+    tividy/builder/ValidatingWorkflowBuilder.cpp
+    tividy/builder/WorkflowDirector.cpp
+    tividy/facade/DefinitionRepository.cpp
+    tividy/facade/WorkflowFacade.cpp
+    tividy/command/Command.cpp
+    tividy/command/CommandProcessor.cpp
+    tividy/command/WorkflowEngine.cpp
+    tividy/core/WorkflowInstance.cpp
+    tividy/core/Participant.cpp
+    tividy/composite_prototype/Stage.cpp
+    tividy/composite_prototype/WorkItem.cpp
+    tividy/state/WorkItemState.cpp
+    tividy/state/States.cpp
+    tividy/mediator/WorkflowMediator.cpp
+    tividy/mediator/InstanceCoordinator.cpp
+    tividy/strategy/AssignmentStrategy.cpp
+    tividy/strategy/WorkAssigner.cpp
+    tividy/observer/ObserverPattern.cpp
+    tividy/observer/Observers.cpp
+    tividy/memento/Memento.cpp
+    tividy/memento/ProcessDataStore.cpp
+    tividy/adapter/PaymentAPI.cpp
+    tividy/adapter/PaymentAdapter.cpp
+    tividy/decorator/WorkItemDecorator.cpp
+    tividy/decorator/ValidationDecorator.cpp
+    tividy/decorator/PriorityDecorator.cpp
+    tividy/decorator/SecurityDecorator.cpp
+    tividy/decorator/AuditDecorator.cpp
+    tividy/decorator/NotificationDecorator.cpp
+    tividy/decorator/DeadlineDecorator.cpp
+    tividy/decorator/ApprovalDecorator.cpp
+    tividy/chain_of_responsibility/ApprovalHandler.cpp
+    tividy/chain_of_responsibility/LevelApprover.cpp
+    tividy/visitor/BottleneckVisitor.cpp
+)
+
+target_include_directories(AllPatternsIntegrationTests PRIVATE
+    ${CMAKE_SOURCE_DIR}
+    ${DOCTEST_DIR}
+)
+
+add_test(NAME AllPatternsIntegrationTests COMMAND AllPatternsIntegrationTests)
