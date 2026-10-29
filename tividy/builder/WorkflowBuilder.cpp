@@ -25,6 +25,8 @@ void WorkflowBuilder::setIdentity(const std::string& id, int version) {
 
 void WorkflowBuilder::reset() {
 
+    delete product;
+
     Stage* root(new Stage("root"));
 
     rootStage = root;
