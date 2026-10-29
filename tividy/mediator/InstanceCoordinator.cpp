@@ -48,7 +48,7 @@ bool InstanceCoordinator::registerItem(WorkItem* item) {
     return true;
 }
 
-void InstanceCoordinator::addDependency(const std::string& item, const std::string& prerequisite) {
+void InstanceCoordinator::addDependency(const std::string& prerequisite, const std::string& item) {
     if (item == prerequisite || !findItem(item) || !findItem(prerequisite)) return;
 
     for (size_t i = 0; i < dependencies.size(); i++) {
