@@ -5,11 +5,12 @@
 .vpprefdata/
 teamworkUser.xml
 teamwork_client/
-sandbox_test/
-tests/run_tests.exe
-build-tests
 
-# local build output / scratch
+# build output
 build/
+build-tests/
 scratch/
-origin/dev
+sandbox_test/
+tividy_app
+tividy_app.exe
+*.exe

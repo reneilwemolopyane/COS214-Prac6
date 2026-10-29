@@ -1,4 +1,0 @@
-C:/Users/molop/OneDrive/Desktop/Second Year/Semester 2/COS 214/Practicals/Prac 6/tividy/build-tests/CMakeFiles/WorkflowBuilderTests.dir
-C:/Users/molop/OneDrive/Desktop/Second Year/Semester 2/COS 214/Practicals/Prac 6/tividy/build-tests/CMakeFiles/test.dir
-C:/Users/molop/OneDrive/Desktop/Second Year/Semester 2/COS 214/Practicals/Prac 6/tividy/build-tests/CMakeFiles/edit_cache.dir
-C:/Users/molop/OneDrive/Desktop/Second Year/Semester 2/COS 214/Practicals/Prac 6/tividy/build-tests/CMakeFiles/rebuild_cache.dir
