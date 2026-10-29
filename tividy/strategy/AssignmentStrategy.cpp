@@ -15,7 +15,7 @@ std::vector<Participant*> AssignmentStrategy::eligible(const WorkItem& item, con
 }
 
 //Role based Strategy
-Participant* RoleBasedStrategy::selectParticipant(const WorkItem&, const std::vector<Participant*>& candidates){
+Participant* RoleBasedStrategy::selectParticipant(const WorkItem& item, const std::vector<Participant*>& candidates){
     std::vector<Participant*> ok = eligible(item, candidates);
     return ok.empty() ? nullptr : ok[0];
 }
@@ -27,7 +27,7 @@ std::string RoleBasedStrategy::name()const{
 }
 
 //Shortest Queue Strategy
-Participant* ShortestQueueStrategy::selectParticipant(const WorkItem&, const std::vector<Participant*>&){
+Participant* ShortestQueueStrategy::selectParticipant(const WorkItem& item, const std::vector<Participant*>& candidates){
     std::vector<Participant*>ok = eligible(item, candidates);
     if (ok.empty()) return nullptr;
     Participant* best = ok[0];
