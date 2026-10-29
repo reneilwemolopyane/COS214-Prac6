@@ -139,6 +139,9 @@ add_executable(MediatorStrategyStateTests
     tividy/state/WorkItemState.cpp
     tividy/state/States.cpp
     tividy/core/Participant.cpp
+    tividy/observer/ObserverPattern.cpp 
+
+
 )
 target_include_directories(MediatorStrategyStateTests PRIVATE
     ${CMAKE_SOURCE_DIR}
