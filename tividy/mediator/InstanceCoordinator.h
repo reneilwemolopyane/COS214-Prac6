@@ -1,4 +1,5 @@
 #pragma once
+
 #include <set>
 #include <string>
 #include <vector>
@@ -10,56 +11,68 @@ class Participant;
 class WorkAssigner;
 class WorkflowSubject;
 
-
-/** @brief One prerequisite link: `item` cannot start until `prerequisite` is completed. */
 struct Dependency {
     std::string item;
     std::string prerequisite;
 };
 
-/** @brief ConcreteMediator: one per WorkflowInstance. Holds dependency state. 
- * Holds the instance's dependency state, decides what an event means
- * (release next items, fail, escalate) and publishes events to observers.
- * It owns nothing: items, participants and collaborators belong to
- * WorkflowInstance or the caller
-*/
+/**
+ * @brief Coordinates work items within one workflow instance.
+ *
+ * Tracks dependencies, handles work-item events, releases eligible
+ * items and publishes events to observers.
+ * Does not own the objects it references.
+ */
+class InstanceCoordinator : public WorkflowMediator {
+private:
+    WorkItem* findItem(const std::string& id) const;
 
-class InstanceCoordinator : public WorkflowMediator{
-    private:
-       WorkItem* findItem(const std::string& id) const;
-       void closeItem(const std::string& id, const std::string& reason);
-       void handleCompleted(const std::string& id);
-       void handleRejection(const std::string& id);    
-       void handleEscalation(const std::string& id);   
-       void publish(const WorkflowEvent& e) const;
+    void closeItem(const std::string& id,
+                   const std::string& reason);
 
-       std::vector<WorkItem*> items;
-       std::vector<Dependency> dependencies;       
-       std::vector<std::string> closedItems;    
-       std::vector<Participant*> pool;             
-       WorkAssigner* assigner;
-       WorkflowSubject* events; 
-       bool started;  
-                            
-    public:
-       InstanceCoordinator(WorkAssigner* assigner, WorkflowSubject* events);
-       ~InstanceCoordinator();
-       InstanceCoordinator& operator=(const InstanceCoordinator&) = delete;
- 
-       /** @brief Mediator entry point: publish first, then react */
+    void handleCompleted(const std::string& id);
+    void handleRejection(const std::string& id);
+    void handleEscalation(const std::string& id);
 
-       void notify(Colleague* sender, WorkflowEvent event, const std::string& itemId) override;
+    void publish(const WorkflowEvent& event) const;
 
-       /** @brief Adds an item and makes this coordinator its mediator. @return false if null or duplicate id */
-       void registerItem(WorkItem* item);          
-       void addDependency(const std::string& item, const std::string& prerequisite); 
-       void addParticipant(Participant* p);
+    std::vector<WorkItem*> items;
+    std::vector<Dependency> dependencies;
+    std::set<std::string> completedItems;
+    std::set<std::string> closedItems;
+    std::vector<Participant*> pool;
 
-       /** @brief Publishes CREATED and releases every item with no open prerequisites. */
-       void start();
-       bool dependenciesMet(const std::string& itemId) const;
-       void releaseAvailableItems();
-       std::vector<WorkItem*> getAvailableItems() const;  
-    
-    };
+    WorkAssigner* assigner;
+    WorkflowSubject* events;
+    bool started;
 
+public:
+    InstanceCoordinator(WorkAssigner* assigner,
+                        WorkflowSubject* events);
+
+    ~InstanceCoordinator() override;
+
+    InstanceCoordinator& operator=(
+        const InstanceCoordinator&) = delete;
+
+    void notify(WorkflowColleague* sender,
+                const WorkflowEvent& event) override;
+
+    bool registerItem(WorkItem* item);
+
+    void addDependency(const std::string& item,
+                       const std::string& prerequisite);
+
+    void addParticipant(Participant* participant);
+
+    void start();
+
+    bool dependenciesMet(const std::string& itemId) const;
+
+    void releaseAvailableItems();
+
+    std::vector<WorkItem*> getAvailableItems() const;
+
+    bool isFinished() const;
+    bool allCompleted() const;
+};
