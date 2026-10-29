@@ -25,7 +25,8 @@ public:
     void escalate(const std::string& reason);
     void suspend();
     void resume();
-
+    void setRole(const std::string& r) { role = r; }
+    void setAssignmentRule(const std::string& r) { assignmentRule = r; }
     
     void markEscalated(); 
 
