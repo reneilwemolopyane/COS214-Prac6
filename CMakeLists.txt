@@ -129,6 +129,48 @@ target_include_directories(IntegrationTests PRIVATE
 
 add_test(NAME IntegrationTests COMMAND IntegrationTests)
 
+# ===== Pattern integration tests (Composite + Decorator + Chain + Visitor) =====
+add_executable(PatternIntegrationTests
+    tests/chain_decorator/test_main.cpp          # reuses the doctest main
+    tests/integration/test_pattern_integration.cpp
+
+    # Composite + State
+    tividy/composite_prototype/Stage.cpp
+    tividy/composite_prototype/WorkItem.cpp
+    tividy/state/WorkItemState.cpp
+    tividy/state/States.cpp
+    tividy/core/Participant.cpp
+    tividy/mediator/WorkflowMediator.cpp
+
+    # Chain of Responsibility
+    tividy/chain_of_responsibility/ApprovalHandler.cpp
+    tividy/chain_of_responsibility/LevelApprover.cpp
+
+    # Decorator
+    tividy/decorator/WorkItemDecorator.cpp
+    tividy/decorator/ValidationDecorator.cpp
+    tividy/decorator/PriorityDecorator.cpp
+    tividy/decorator/SecurityDecorator.cpp
+    tividy/decorator/AuditDecorator.cpp
+    tividy/decorator/NotificationDecorator.cpp
+    tividy/decorator/DeadlineDecorator.cpp
+    tividy/decorator/ApprovalDecorator.cpp
+
+    # Visitor
+    tividy/visitor/BottleneckVisitor.cpp
+    tividy/memento/ProcessDataStore.cpp
+    tividy/memento/Memento.cpp
+)
+
+target_include_directories(PatternIntegrationTests PRIVATE
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/tividy
+    ${CMAKE_SOURCE_DIR}/third_party
+    ${DOCTEST_DIR}
+)
+
+add_test(NAME PatternIntegrationTests COMMAND PatternIntegrationTests)
+
 # ===== Command + Observer tests =====
 add_subdirectory(tests/command_observer)
 
