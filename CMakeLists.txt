@@ -10,16 +10,14 @@ enable_testing()
 
 set(DOCTEST_DIR ${CMAKE_SOURCE_DIR}/third_party/doctest)
 
-# ===== Facade / Builder tests =====
-add_executable(WorkflowBuilderTests
-    Facade_BuilderTests/main.cpp
-    Facade_BuilderTests/WorkflowDefinitionTests.cpp
-    Facade_BuilderTests/DraftWorkflowBuilderTests.cpp
-    Facade_BuilderTests/ValidatingWorkflowBuilderTests.cpp
-    Facade_BuilderTests/WorkflowDirectorTests.cpp
-    Facade_BuilderTests/DefinitionRepositoryTests.cpp
-    Facade_BuilderTests/WorkflowFacadeTests.cpp
-    Facade_BuilderTests/WorkflowEngineTests.cpp
+# ===== Facade / Builder unit tests (isolated with fakes) =====
+add_executable(FacadeBuilderUnitTests
+    tests/test_main.cpp
+    tests/test_builders.cpp
+    tests/test_definition.cpp
+    tests/test_director.cpp
+    tests/test_facade.cpp
+    tests/test_repository.cpp
 
     tividy/builder/WorkflowBuilder.cpp
     tividy/builder/WorkflowDefinition.cpp
@@ -28,17 +26,18 @@ add_executable(WorkflowBuilderTests
     tividy/builder/WorkflowDirector.cpp
     tividy/facade/DefinitionRepository.cpp
     tividy/facade/WorkflowFacade.cpp
-    tividy/command/WorkflowEngine.cpp
-    tividy/core/WorkflowInstance.cpp
 )
 
-target_include_directories(WorkflowBuilderTests PRIVATE
+target_include_directories(FacadeBuilderUnitTests BEFORE PRIVATE
+    ${CMAKE_SOURCE_DIR}/tests/fakes
+)
+
+target_include_directories(FacadeBuilderUnitTests PRIVATE
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/Facade_BuilderTests
-    ${DOCTEST_DIR}
+    ${CMAKE_SOURCE_DIR}/tests
 )
 
-add_test(NAME WorkflowBuilderTests COMMAND WorkflowBuilderTests)
+add_test(NAME FacadeBuilderUnitTests COMMAND FacadeBuilderUnitTests)
 
 # ===== State + Composite tests =====
 add_executable(StateCompositeTests
@@ -86,6 +85,44 @@ target_include_directories(ChainDecoratorTests PRIVATE
 )
 
 add_test(NAME ChainDecoratorTests COMMAND ChainDecoratorTests)
+
+# ===== Integration tests: Facade + Builder + Prototype + Memento =====
+add_executable(IntegrationTests
+    IntegrationTests/main.cpp
+    IntegrationTests/FacadeBuilderPrototypeMementoTests.cpp
+
+    tividy/builder/WorkflowBuilder.cpp
+    tividy/builder/WorkflowDefinition.cpp
+    tividy/builder/DraftWorkflowBuilder.cpp
+    tividy/builder/ValidatingWorkflowBuilder.cpp
+    tividy/builder/WorkflowDirector.cpp
+    tividy/facade/DefinitionRepository.cpp
+    tividy/facade/WorkflowFacade.cpp
+    tividy/command/Command.cpp
+    tividy/command/CommandProcessor.cpp
+    tividy/command/WorkflowEngine.cpp
+    tividy/core/WorkflowInstance.cpp
+    tividy/core/Participant.cpp
+    tividy/composite_prototype/Stage.cpp
+    tividy/composite_prototype/WorkItem.cpp
+    tividy/state/WorkItemState.cpp
+    tividy/state/States.cpp
+    tividy/mediator/WorkflowMediator.cpp
+    tividy/mediator/InstanceCoordinator.cpp
+    tividy/strategy/AssignmentStrategy.cpp
+    tividy/strategy/WorkAssigner.cpp
+    tividy/observer/ObserverPattern.cpp
+    tividy/observer/Observers.cpp
+    tividy/memento/Memento.cpp
+    tividy/memento/ProcessDataStore.cpp
+)
+
+target_include_directories(IntegrationTests PRIVATE
+    ${CMAKE_SOURCE_DIR}
+    ${DOCTEST_DIR}
+)
+
+add_test(NAME IntegrationTests COMMAND IntegrationTests)
 
 # ===== Command + Observer tests =====
 add_subdirectory(tests/command_observer)
