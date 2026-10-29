@@ -6,7 +6,7 @@ class WorkflowColleague;
 
 class WorkflowMediator {
 public:
-    virtual ~WorkflowMediator() {}
+    virtual ~WorkflowMediator();
 
     virtual void notify(WorkflowColleague* sender, const WorkflowEvent& event) = 0;
 };
