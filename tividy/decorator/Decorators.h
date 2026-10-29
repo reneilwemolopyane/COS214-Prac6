@@ -6,3 +6,4 @@
 #include "tividy/decorator/AuditDecorator.h"
 #include "tividy/decorator/NotificationDecorator.h"
 #include "tividy/decorator/DeadlineDecorator.h"
+#include "tividy/decorator/ApprovalDecorator.h"
