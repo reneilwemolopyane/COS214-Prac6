@@ -24,7 +24,11 @@ public:
      *  and audit also run when commands act on an item. */
     virtual void assign(Participant*) {}
     virtual void complete(const std::string& outcome) { complete(); }
-    
+    /** True if a deadline has passed. Decorators forward it; DeadlineDecorator answers it. */
+    virtual bool isOverdue() const { return false; }
+    /** WorkItem overrides this with a real rejection; other nodes just cancel. */
+    virtual void reject(const std::string& reason) { (void)reason; cancel(); }
+
     void setParent(WorkflowComponent* p) { parent = p; }
     WorkflowComponent* getParent() const { return parent; }
     virtual void childFinished(WorkflowComponent& child) {} 
