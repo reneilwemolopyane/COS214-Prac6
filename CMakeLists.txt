@@ -90,6 +90,7 @@ add_test(NAME ChainDecoratorTests COMMAND ChainDecoratorTests)
 add_executable(IntegrationTests
     IntegrationTests/main.cpp
     IntegrationTests/FacadeBuilderPrototypeMementoTests.cpp
+    IntegrationTests/CommandObserverAdapterTests.cpp
 
     tividy/builder/WorkflowBuilder.cpp
     tividy/builder/WorkflowDefinition.cpp
@@ -115,6 +116,10 @@ add_executable(IntegrationTests
     tividy/observer/Observers.cpp
     tividy/memento/Memento.cpp
     tividy/memento/ProcessDataStore.cpp
+    tividy/adapter/MessageAPI.cpp
+    tividy/adapter/MessageAdapter.cpp
+    tividy/adapter/PaymentAPI.cpp
+    tividy/adapter/PaymentAdapter.cpp
 )
 
 target_include_directories(IntegrationTests PRIVATE
