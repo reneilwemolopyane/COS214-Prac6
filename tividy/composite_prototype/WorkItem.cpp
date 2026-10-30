@@ -148,5 +148,3 @@ std::string WorkItem::getData(const std::string& key) const {
 void WorkItem::setData(const std::string& key, const std::string& value) {
     data[key] = value;
 }
-void WorkItem::setRole(const std::string& r)           { role = r; }
-void WorkItem::setAssignmentRule(const std::string& r) { assignmentRule = r; }
