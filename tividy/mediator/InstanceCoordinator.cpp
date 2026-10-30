@@ -58,7 +58,7 @@ void InstanceCoordinator::addDependency(const std::string& prerequisite, const s
         }
     }
 
-    dependencies.push_back({prerequisite, item});
+    dependencies.push_back({item, prerequisite});
 }
 
 void InstanceCoordinator::addParticipant(Participant* participant) {
