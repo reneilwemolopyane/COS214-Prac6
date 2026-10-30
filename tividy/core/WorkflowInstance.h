@@ -43,7 +43,6 @@ private:
     DataMap data;
     int version;
     std::vector<std::pair<std::string,std::string>> dependencies;
-    std::vector<std::pair<std::string, std::string> > pendingDependencies;
     InstanceCoordinator* coordinator;
     CommandProcessor* processor;
 };

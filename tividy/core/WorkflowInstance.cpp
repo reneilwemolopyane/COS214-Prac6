@@ -65,9 +65,6 @@ void WorkflowInstance::start() {
         coordinator->addDependency(dependencies[i].first, dependencies[i].second);
     }
     
-    /*for (const auto& dep : dependencies) {
-        coordinator->addDependency(dep.first,dep.second);
-    }*/
 
     coordinator->start();
     root->start();
