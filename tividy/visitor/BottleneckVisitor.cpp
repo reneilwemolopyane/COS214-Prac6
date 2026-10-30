@@ -3,7 +3,7 @@
 #include "tividy/composite_prototype/Stage.h"
 #include "tividy/composite_prototype/WorkItem.h"
 #include "tividy/core/WorkflowInstance.h"
-
+#include "tividy/composite_prototype/WorkflowComponent.h"
 #include <chrono>
 
 void BottleneckVisitor::visitInstance(WorkflowInstance& instance) {
@@ -20,6 +20,14 @@ void BottleneckVisitor::visitStage(Stage& stage) {
             report += "[BOTTLENECK] Stage " + stage.getName() + " exceeded its time limit.\n";
         }
     }
+}
+
+void BottleneckVisitor::visitDecorator(WorkflowComponent& component) {
+    if (!component.isOverdue()) return;
+    // each stacked layer calls this, so report an item only once (keyed by name)
+    if (!overdueReported.insert(component.getName()).second) return;
+    report += "[BOTTLENECK] Work item " + component.getName() +
+              " exceeded its deadline.\n";
 }
 
 void BottleneckVisitor::visitWorkItem(WorkItem& item) {
