@@ -45,18 +45,16 @@ private:
     WorkAssigner* assigner;
     WorkflowSubject* events;
     bool started;
+    WorkflowInstance* owner;
 
 public:
-    InstanceCoordinator(WorkAssigner* assigner,
-                        WorkflowSubject* events);
+    InstanceCoordinator(WorkAssigner* assigner,  WorkflowSubject* events, WorkflowInstance* instance);
 
     ~InstanceCoordinator() override;
 
-    InstanceCoordinator& operator=(
-        const InstanceCoordinator&) = delete;
+    InstanceCoordinator& operator=(const InstanceCoordinator&) = delete;
 
-    void notify(WorkflowColleague* sender,
-                const WorkflowEvent& event) override;
+    void notify(WorkflowColleague* sender, const WorkflowEvent& event) override;
 
     bool registerItem(WorkItem* item);
 
@@ -73,5 +71,6 @@ public:
     std::vector<WorkItem*> getAvailableItems() const;
 
     bool isFinished() const;
+    void checkLifecycle()
     bool allCompleted() const;
 };

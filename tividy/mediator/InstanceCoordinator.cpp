@@ -3,9 +3,10 @@
 #include "tividy/strategy/WorkAssigner.h"
 #include "tividy/composite_prototype/WorkItem.h"
 #include "tividy/observer/Observers.h"
+#include "tividy/core/WorkflowInstance.h"
 
-InstanceCoordinator::InstanceCoordinator(WorkAssigner* a, WorkflowSubject* s)
-    : assigner(a), events(s), started(false) {
+InstanceCoordinator::InstanceCoordinator(WorkAssigner* a, WorkflowSubject* s, WorkflowInstance* instance)
+    : assigner(a), events(s), started(false), owner(instance) {
     if (assigner) assigner->setMediator(this);
 }
 
@@ -71,6 +72,8 @@ void InstanceCoordinator::start() {
     started = true;
     publish(WorkflowEvent(EVT_CREATED, nullptr));
     releaseAvailableItems();
+
+    checkLifecycle();
 }
 
 bool InstanceCoordinator::dependenciesMet(const std::string& itemId) const {
@@ -139,6 +142,7 @@ void InstanceCoordinator::handleCompleted(const std::string& id) {
 
     completedItems.insert(id);
     releaseAvailableItems();
+    checkLifecycle();
 }
 
 void InstanceCoordinator::handleRejection(const std::string& id) {
@@ -152,6 +156,17 @@ void InstanceCoordinator::handleEscalation(const std::string& id) {
 
     item->markEscalated();
     closeItem(id, "prerequisite " + id + " was escalated");
+}
+
+void InstanceCoordinator::checkLifecycle() {
+    if (!owner || !isFinished()) return;
+
+    if (allCompleted()) {
+        owner->updateStatus(COMPLETED);
+    }
+    else {
+        owner->updateStatus(TERMINATED);
+    }
 }
 
 void InstanceCoordinator::closeItem(const std::string& id, const std::string& reason) {
@@ -179,5 +194,6 @@ void InstanceCoordinator::closeItem(const std::string& id, const std::string& re
         ));
 
         closeItem(dependent->getId(), "prerequisite " + dependent->getId() + " was escalated");
+        checkLifecycle();
     }
 }
