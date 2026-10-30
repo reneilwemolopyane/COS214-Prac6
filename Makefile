@@ -38,3 +38,7 @@ clean:
 > rm -rf $(BUILD)
 
 -include $(ENGINE_OBJ:.o=.d)
+
+> @mkdir -p $(BUILD)/bin
+> $(CXX) $(CXXFLAGS) $(CPPFLAGS) main.cpp $(ENGINE_LIB) -o $(BUILD)/bin/demo$(EXE)
+> $(BUILD)/bin/demo$(EXE)
