@@ -3,10 +3,10 @@
 #include "tividy/strategy/WorkAssigner.h"
 #include "tividy/composite_prototype/WorkItem.h"
 #include "tividy/observer/Observers.h"
-#include "tividy/core/WorkflowInstance.h"
+
 
 InstanceCoordinator::InstanceCoordinator(WorkAssigner* a, WorkflowSubject* s, WorkflowInstance* instance)
-    : assigner(a), events(s), started(false), owner(instance) {
+    : assigner(a), events(s), started(false){
     if (assigner) assigner->setMediator(this);
 }
 
@@ -72,8 +72,6 @@ void InstanceCoordinator::start() {
     started = true;
     publish(WorkflowEvent(EVT_CREATED, nullptr));
     releaseAvailableItems();
-
-    checkLifecycle();
 }
 
 bool InstanceCoordinator::dependenciesMet(const std::string& itemId) const {
@@ -104,18 +102,20 @@ void InstanceCoordinator::releaseAvailableItems() {
         item->makeAvailable();
 
         Participant* participant = assigner ? assigner->assign(*item, pool) : nullptr;
-
         if (participant) {
-            item->assign(participant);
+          item->assign(*participant);
 
-            publish(WorkflowEvent(
-                EVT_ASSIGNED,
-                nullptr,
-                item->getId(),
-                nullptr,
-                "assignee: " + participant->getName()
-            ));
-        }
+           DataMap payload;
+           payload["assignee"] = participant->getName();
+           payload["message"] = "Work item assigned";
+
+        publish(WorkflowEvent(
+        EVT_ASSIGNED,
+        item->getId(),
+        payload
+    ));
+}
+        
     }
 }
 
@@ -142,7 +142,6 @@ void InstanceCoordinator::handleCompleted(const std::string& id) {
 
     completedItems.insert(id);
     releaseAvailableItems();
-    checkLifecycle();
 }
 
 void InstanceCoordinator::handleRejection(const std::string& id) {
@@ -156,17 +155,6 @@ void InstanceCoordinator::handleEscalation(const std::string& id) {
 
     item->markEscalated();
     closeItem(id, "prerequisite " + id + " was escalated");
-}
-
-void InstanceCoordinator::checkLifecycle() {
-    if (!owner || !isFinished()) return;
-
-    if (allCompleted()) {
-        owner->updateStatus(COMPLETED);
-    }
-    else {
-        owner->updateStatus(TERMINATED);
-    }
 }
 
 void InstanceCoordinator::closeItem(const std::string& id, const std::string& reason) {
@@ -194,6 +182,5 @@ void InstanceCoordinator::closeItem(const std::string& id, const std::string& re
         ));
 
         closeItem(dependent->getId(), "prerequisite " + dependent->getId() + " was escalated");
-        checkLifecycle();
     }
 }
