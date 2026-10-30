@@ -90,6 +90,7 @@ add_test(NAME ChainDecoratorTests COMMAND ChainDecoratorTests)
 add_executable(IntegrationTests
     IntegrationTests/main.cpp
     IntegrationTests/FacadeBuilderPrototypeMementoTests.cpp
+    IntegrationTests/CommandObserverAdapterTests.cpp
 
     tividy/builder/WorkflowBuilder.cpp
     tividy/builder/WorkflowDefinition.cpp
@@ -115,6 +116,10 @@ add_executable(IntegrationTests
     tividy/observer/Observers.cpp
     tividy/memento/Memento.cpp
     tividy/memento/ProcessDataStore.cpp
+    tividy/adapter/MessageAPI.cpp
+    tividy/adapter/MessageAdapter.cpp
+    tividy/adapter/PaymentAPI.cpp
+    tividy/adapter/PaymentAdapter.cpp
 )
 
 target_include_directories(IntegrationTests PRIVATE
@@ -123,6 +128,48 @@ target_include_directories(IntegrationTests PRIVATE
 )
 
 add_test(NAME IntegrationTests COMMAND IntegrationTests)
+
+# ===== Pattern integration tests (Composite + Decorator + Chain + Visitor) =====
+add_executable(PatternIntegrationTests
+    tests/chain_decorator/test_main.cpp          # reuses the doctest main
+    tests/integration/test_pattern_integration.cpp
+
+    # Composite + State
+    tividy/composite_prototype/Stage.cpp
+    tividy/composite_prototype/WorkItem.cpp
+    tividy/state/WorkItemState.cpp
+    tividy/state/States.cpp
+    tividy/core/Participant.cpp
+    tividy/mediator/WorkflowMediator.cpp
+
+    # Chain of Responsibility
+    tividy/chain_of_responsibility/ApprovalHandler.cpp
+    tividy/chain_of_responsibility/LevelApprover.cpp
+
+    # Decorator
+    tividy/decorator/WorkItemDecorator.cpp
+    tividy/decorator/ValidationDecorator.cpp
+    tividy/decorator/PriorityDecorator.cpp
+    tividy/decorator/SecurityDecorator.cpp
+    tividy/decorator/AuditDecorator.cpp
+    tividy/decorator/NotificationDecorator.cpp
+    tividy/decorator/DeadlineDecorator.cpp
+    tividy/decorator/ApprovalDecorator.cpp
+
+    # Visitor
+    tividy/visitor/BottleneckVisitor.cpp
+    tividy/memento/ProcessDataStore.cpp
+    tividy/memento/Memento.cpp
+)
+
+target_include_directories(PatternIntegrationTests PRIVATE
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/tividy
+    ${CMAKE_SOURCE_DIR}/third_party
+    ${DOCTEST_DIR}
+)
+
+add_test(NAME PatternIntegrationTests COMMAND PatternIntegrationTests)
 
 # ===== Command + Observer tests =====
 add_subdirectory(tests/command_observer)
@@ -149,3 +196,53 @@ target_include_directories(MediatorStrategyStateTests PRIVATE
     ${DOCTEST_DIR}
 )
 add_test(NAME MediatorStrategyStateTests COMMAND MediatorStrategyStateTests)
+
+add_executable(AllPatternsIntegrationTests
+    IntegrationTests/main.cpp
+    IntegrationTests/AllPatternsIntegrationTests.cpp
+
+    tividy/builder/WorkflowBuilder.cpp
+    tividy/builder/WorkflowDefinition.cpp
+    tividy/builder/DraftWorkflowBuilder.cpp
+    tividy/builder/ValidatingWorkflowBuilder.cpp
+    tividy/builder/WorkflowDirector.cpp
+    tividy/facade/DefinitionRepository.cpp
+    tividy/facade/WorkflowFacade.cpp
+    tividy/command/Command.cpp
+    tividy/command/CommandProcessor.cpp
+    tividy/command/WorkflowEngine.cpp
+    tividy/core/WorkflowInstance.cpp
+    tividy/core/Participant.cpp
+    tividy/composite_prototype/Stage.cpp
+    tividy/composite_prototype/WorkItem.cpp
+    tividy/state/WorkItemState.cpp
+    tividy/state/States.cpp
+    tividy/mediator/WorkflowMediator.cpp
+    tividy/mediator/InstanceCoordinator.cpp
+    tividy/strategy/AssignmentStrategy.cpp
+    tividy/strategy/WorkAssigner.cpp
+    tividy/observer/ObserverPattern.cpp
+    tividy/observer/Observers.cpp
+    tividy/memento/Memento.cpp
+    tividy/memento/ProcessDataStore.cpp
+    tividy/adapter/PaymentAPI.cpp
+    tividy/adapter/PaymentAdapter.cpp
+    tividy/decorator/WorkItemDecorator.cpp
+    tividy/decorator/ValidationDecorator.cpp
+    tividy/decorator/PriorityDecorator.cpp
+    tividy/decorator/SecurityDecorator.cpp
+    tividy/decorator/AuditDecorator.cpp
+    tividy/decorator/NotificationDecorator.cpp
+    tividy/decorator/DeadlineDecorator.cpp
+    tividy/decorator/ApprovalDecorator.cpp
+    tividy/chain_of_responsibility/ApprovalHandler.cpp
+    tividy/chain_of_responsibility/LevelApprover.cpp
+    tividy/visitor/BottleneckVisitor.cpp
+)
+
+target_include_directories(AllPatternsIntegrationTests PRIVATE
+    ${CMAKE_SOURCE_DIR}
+    ${DOCTEST_DIR}
+)
+
+add_test(NAME AllPatternsIntegrationTests COMMAND AllPatternsIntegrationTests)

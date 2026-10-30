@@ -25,7 +25,11 @@ WorkflowInstance* WorkflowDefinition::createInstance(const DataMap& data) {
 
     std::string instanceId = id + "-" + std::to_string(instanceCounter);
 
-    return new WorkflowInstance(instanceId, copy, data, version);
+    WorkflowInstance* instance = new WorkflowInstance(instanceId, copy, data, version);
+    for (const auto& dep : dependencies) {
+        instance->addDependency(dep.first, dep.second);
+    }
+    return instance;
 }
 
 std::string WorkflowDefinition::getId() const{ 
