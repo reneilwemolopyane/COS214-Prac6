@@ -9,6 +9,7 @@
 class WorkItem;
 class Participant;
 class WorkAssigner;
+class WorkflowInstance;
 class WorkflowSubject;
 
 struct Dependency {
