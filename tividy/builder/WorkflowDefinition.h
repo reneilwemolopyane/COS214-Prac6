@@ -11,6 +11,8 @@
 
 class WorkflowInstance;
 class WorkflowComponent;
+class WorkAssigner; 
+class Participant;
 /**
  * @file WorkflowDefinition.h
  * @brief The reusable template of a process.
@@ -38,7 +40,8 @@ public:
      * @return The new instance; the caller owns it.
      * @throws std::logic_error if the definition has no structure yet.
      */
-    WorkflowInstance* createInstance(const DataMap& data);
+    WorkflowInstance* createInstance(const DataMap& data, WorkAssigner* assigner = 0, 
+    const std::vector<Participant*>& pool = std::vector<Participant*>());
 
     /// @return The definition id.
     std::string getId() const;

@@ -10,7 +10,7 @@ WorkflowDefinition::WorkflowDefinition(const std::string& id, int version)
       instanceCounter(0) {
 }
 
-WorkflowInstance* WorkflowDefinition::createInstance(const DataMap& data) {
+WorkflowInstance* WorkflowDefinition::createInstance(const DataMap& data, WorkAssigner* assigner, const std::vector<Participant*>& pool) {
 
     if (!root) {
         throw std::logic_error(
@@ -25,7 +25,7 @@ WorkflowInstance* WorkflowDefinition::createInstance(const DataMap& data) {
 
     std::string instanceId = id + "-" + std::to_string(instanceCounter);
 
-    WorkflowInstance* instance = new WorkflowInstance(instanceId, copy, data, version);
+    WorkflowInstance* instance = new WorkflowInstance(instanceId, copy, data, version, assigner, pool);
     for (const auto& dep : dependencies) {
         instance->addDependency(dep.first, dep.second);
     }

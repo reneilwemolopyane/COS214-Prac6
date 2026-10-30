@@ -3,6 +3,7 @@
 #include "tividy/composite_prototype/Stage.h"
 #include "tividy/composite_prototype/WorkItem.h"
 
+
 class RegistrationVisitor : public WorkflowVisitor {
     InstanceCoordinator* coord;
 public:
@@ -21,13 +22,19 @@ public:
 WorkflowInstance::WorkflowInstance(const std::string& id,
                                    WorkflowComponent* rootCopy,
                                    const DataMap& d,
-                                   int version)
+                                   int version,
+                                   WorkAssigner* assigner,
+                                   const std::vector<Participant*>& pool)
     : id(id),
       root(rootCopy),
       data(d),
-      version(version),
+      assigner(assigner), 
+      pool(pool),
+      version(version),   
       coordinator(0),
-      processor(new CommandProcessor(this)) {}
+      processor(new CommandProcessor(this)) 
+{
+}
 
 WorkflowInstance::~WorkflowInstance() {
     delete root;
@@ -42,11 +49,14 @@ void WorkflowInstance::addDependency(const std::string& prerequisite, const std:
 void WorkflowInstance::start() {
     if (!root) return;
     delete coordinator;
-    coordinator = new InstanceCoordinator(0, this);
+    coordinator = new InstanceCoordinator(assigner, this);
+    for (size_t i = 0; i < pool.size(); ++i) {
+        coordinator->addParticipant(pool[i]);
+    }
     RegistrationVisitor regVisitor(coordinator);
     root->accept(regVisitor);
     for (const auto& dep : dependencies) {
-        coordinator->addDependency(dep.first, dep.second);
+        coordinator->addDependency(dep.first,dep.second);
     }
     coordinator->start();
     root->start();
@@ -78,5 +88,5 @@ InstanceMemento* WorkflowInstance::createMemento() const {
 
 void WorkflowInstance::restoreFromMemento(const InstanceMemento& memento) {
     this->data = memento.data;
-    this->version = memento.version;
+   this->version = memento.version;
 }

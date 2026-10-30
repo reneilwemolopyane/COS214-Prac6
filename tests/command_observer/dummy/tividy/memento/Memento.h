@@ -4,4 +4,5 @@
 struct InstanceMemento {
     DataMap data;
     std::string stateSnapshot;
+    int version = 0;
 };

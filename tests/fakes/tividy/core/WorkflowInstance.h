@@ -3,11 +3,18 @@
 #include "tividy/core/Common.h"
 #include "tividy/composite_prototype/WorkflowComponent.h"
 
+class WorkAssigner; 
+class Participant;  
+class WorkflowComponent;
+
 class WorkflowInstance {
 public:
-    WorkflowInstance(const std::string& id, WorkflowComponent* root,
-                     const DataMap& data, int definitionVersion)
-        : id_(id), root_(root), data_(data), version_(definitionVersion), status_("Created") {}
+      WorkflowInstance(const std::string& id, 
+                     WorkflowComponent* rootCopy, 
+                     const DataMap& d, 
+                     int version = 1, 
+                     WorkAssigner* assigner = 0, 
+                     const std::vector<Participant*>& pool = std::vector<Participant*>()){} 
     ~WorkflowInstance() { delete root_; }
     void start() { status_ = "Running"; }
     void addDependency(const std::string&, const std::string&) {}

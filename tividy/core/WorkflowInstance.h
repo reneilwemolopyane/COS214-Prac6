@@ -7,13 +7,16 @@
 #include "tividy/mediator/InstanceCoordinator.h"
 #include "tividy/command/CommandProcessor.h"
 #include "tividy/memento/Memento.h"
+#include "tividy/strategy/WorkAssigner.h"
 
 class WorkflowInstance : public WorkflowSubject, public WorkflowElement {
 public:
-    WorkflowInstance(const std::string& id,
-                     WorkflowComponent* rootCopy,
-                     const DataMap& d,
-                     int version = 1);
+      WorkflowInstance(const std::string& id, 
+                     WorkflowComponent* rootCopy, 
+                     const DataMap& d, 
+                     int version = 1, 
+                     WorkAssigner* assigner = 0, 
+                     const std::vector<Participant*>& pool = std::vector<Participant*>());
 
     ~WorkflowInstance();
 
@@ -34,6 +37,8 @@ public:
 private:
     std::string id;
     WorkflowComponent* root;
+    WorkAssigner* assigner;             // NEW
+    std::vector<Participant*> pool;
     DataMap data;
     int version;
     std::vector<std::pair<std::string,std::string>> dependencies;
