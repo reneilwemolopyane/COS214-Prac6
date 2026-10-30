@@ -32,7 +32,7 @@ void SecurityDecorator::assign(Participant* p) {
     wrapped->assign(p);
 }
 
-void SecurityDecorator::cancel()   { check(); wrapped->cancel(); }
+void SecurityDecorator::cancel()   { wrapped->cancel(); }
 
 WorkflowComponent* SecurityDecorator::clone() const {
     SecurityDecorator* c = new SecurityDecorator(wrapped->clone(), requiredRole, actorRole);
