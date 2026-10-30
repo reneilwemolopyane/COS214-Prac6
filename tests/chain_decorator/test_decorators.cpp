@@ -87,13 +87,19 @@ TEST_CASE("security denies the wrong role and allows the right one") {
 
     CHECK_THROWS_AS(s.start(), std::runtime_error);
     CHECK_THROWS_AS(s.complete(), std::runtime_error);
-    CHECK_THROWS_AS(s.cancel(), std::runtime_error);
     CHECK(log.empty());
 
     s.setActor("Manager");
     s.start();
     s.complete();
     CHECK(s.isComplete());
+}
+
+TEST_CASE("security does not block a system cancel") {
+    Log log;
+    SecurityDecorator s(new StubItem("Approve", &log), "Manager");   // no actor set
+    CHECK_NOTHROW(s.cancel());
+    CHECK(log.size() == 1);
 }
 
 TEST_CASE("security denies an empty actor") {
@@ -280,7 +286,7 @@ TEST_CASE("decorators can be stacked and each layer does its job") {
     CHECK(msgs.size() == 2);
 
     current = "Intern";
-    CHECK_THROWS_AS(item->cancel(), std::runtime_error);   // security is outermost
+    CHECK_THROWS_AS(item->start(), std::runtime_error);   // security is outermost
 }
 
 TEST_CASE("cloning a stack gives an independent copy") {
@@ -352,6 +358,7 @@ TEST_CASE("a blocked completion does not notify the parent") {
     CHECK_THROWS_AS(d.complete(), std::runtime_error);
     CHECK(parent.heard.empty());
 }
+
 // ---------- command-style calls: assign(Participant*) and complete(outcome) ----------
 TEST_CASE("security also guards assign and complete(outcome)") {
     Log log;
