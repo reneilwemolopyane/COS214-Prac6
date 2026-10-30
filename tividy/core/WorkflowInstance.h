@@ -33,15 +33,17 @@ public:
 
     CommandProcessor* getProcessor() { return processor; }
     InstanceCoordinator* getCoordinator() { return coordinator; }
+    void registerDependency(const std::string& itemId, const std::string& prereqId);
 
 private:
     std::string id;
     WorkflowComponent* root;
-    WorkAssigner* assigner;             // NEW
+    WorkAssigner* assigner;           
     std::vector<Participant*> pool;
     DataMap data;
     int version;
     std::vector<std::pair<std::string,std::string>> dependencies;
+    std::vector<std::pair<std::string, std::string> > pendingDependencies;
     InstanceCoordinator* coordinator;
     CommandProcessor* processor;
 };

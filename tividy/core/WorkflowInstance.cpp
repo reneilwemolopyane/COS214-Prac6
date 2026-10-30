@@ -27,10 +27,10 @@ WorkflowInstance::WorkflowInstance(const std::string& id,
                                    const std::vector<Participant*>& pool)
     : id(id),
       root(rootCopy),
-      data(d),
-      assigner(assigner), 
+      assigner(assigner),
       pool(pool),
-      version(version),   
+      data(d),
+      version(version),
       coordinator(0),
       processor(new CommandProcessor(this)) 
 {
@@ -48,16 +48,27 @@ void WorkflowInstance::addDependency(const std::string& prerequisite, const std:
 
 void WorkflowInstance::start() {
     if (!root) return;
+    delete processor;
     delete coordinator;
+
+    processor = new CommandProcessor(this);
     coordinator = new InstanceCoordinator(assigner, this);
+
     for (size_t i = 0; i < pool.size(); ++i) {
         coordinator->addParticipant(pool[i]);
     }
+
     RegistrationVisitor regVisitor(coordinator);
     root->accept(regVisitor);
-    for (const auto& dep : dependencies) {
-        coordinator->addDependency(dep.first,dep.second);
+
+    for (std::size_t i = 0; i < dependencies.size(); ++i) {
+        coordinator->addDependency(dependencies[i].first, dependencies[i].second);
     }
+    
+    /*for (const auto& dep : dependencies) {
+        coordinator->addDependency(dep.first,dep.second);
+    }*/
+
     coordinator->start();
     root->start();
 }
@@ -89,4 +100,8 @@ InstanceMemento* WorkflowInstance::createMemento() const {
 void WorkflowInstance::restoreFromMemento(const InstanceMemento& memento) {
     this->data = memento.data;
    this->version = memento.version;
+}
+
+void WorkflowInstance::registerDependency(const std::string& itemId, const std::string& prereqId) {
+    if (coordinator) coordinator->addDependency(prereqId, itemId);
 }
