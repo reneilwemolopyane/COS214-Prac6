@@ -1,0 +1,31 @@
+sequenceDiagram
+  actor U as User (TUI / API)
+  participant E as WorkflowEngine
+  participant P as CommandProcessor
+  participant C as CompleteWorkItemCommand
+  participant D as Decorators (front)
+  participant W as WorkItem (+State)
+  participant M as InstanceCoordinator
+  participant X as Expression (guard)
+  participant A as WorkAssigner
+  participant O as Observers
+  U->>E: completeWorkItem(instance, "Review claim and decide", "WRITE_OFF")
+  E->>E: isInProgress? actor is assignee?
+  E->>P: run(CompleteWorkItemCommand)
+  P->>C: execute()
+  C->>D: complete("WRITE_OFF")
+  D->>W: complete("WRITE_OFF") (validation / security / audit first)
+  W->>M: notify(COMPLETED)
+  M->>M: mark completed, release dependants
+  loop each item whose prerequisites are resolved
+    M->>X: evaluate(outcome('Review claim and decide') == REPAIR)
+    X-->>M: false
+    M->>W: skip("branch not taken") -> SkippedState
+    M->>O: SKIPPED event (audit)
+    M->>M: dead-path: dependants with only skipped prerequisites are skipped
+  end
+  M->>A: assign(next item, pool) [Strategy]
+  A-->>M: participant
+  M->>O: ASSIGNED / ROUTED events
+  P-->>E: true
+  E-->>U: OK + new events
