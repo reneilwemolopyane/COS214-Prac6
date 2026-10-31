@@ -1,0 +1,24 @@
+name: CI
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Refuse unresolved merge conflict markers
+        run: |
+          if git grep -n -E '^(<<<<<<< |>>>>>>> )' -- '*.h' '*.cpp'; then
+            echo "Merge conflict markers found"; exit 1
+          fi
+
+      - name: Build
+        run: make -j4
+
+      - name: Test
+        run: make test
