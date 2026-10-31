@@ -9,7 +9,6 @@
 class WorkItem;
 class Participant;
 class WorkAssigner;
-class WorkflowInstance;
 class WorkflowSubject;
 
 struct Dependency {
@@ -28,8 +27,7 @@ class InstanceCoordinator : public WorkflowMediator {
 private:
     WorkItem* findItem(const std::string& id) const;
 
-    void closeItem(const std::string& id,
-                   const std::string& reason);
+    void closeItem(const std::string& id,  const std::string& reason);
 
     void handleCompleted(const std::string& id);
     void handleRejection(const std::string& id);
@@ -46,7 +44,6 @@ private:
     WorkAssigner* assigner;
     WorkflowSubject* events;
     bool started;
-    WorkflowInstance* owner;
 
 public:
     InstanceCoordinator(WorkAssigner* assigner,  WorkflowSubject* events, WorkflowInstance* instance);
@@ -72,6 +69,5 @@ public:
     std::vector<WorkItem*> getAvailableItems() const;
 
     bool isFinished() const;
-    void checkLifecycle()
     bool allCompleted() const;
 };
