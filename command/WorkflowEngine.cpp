@@ -56,10 +56,13 @@ bool WorkflowEngine::start(const std::string& instanceId) {
 bool WorkflowEngine::cancel(const std::string& instanceId) {
     WorkflowInstance* instance = findInstance(instanceId);
     if (!isRunning(instance)) return false;
-    // Reverse everything already done in this instance (e.g. refund a payment) before cancelling.
+        // Reverse everything already done in this instance (e.g. refund a payment) before cancelling.
+    instance->setSystemActing(true);   // cancelling is an engine action, not a role-gated user action
     instance->getProcessor()->compensate();
-    instance->cancelAll();   // compensation reopens finished items, so close everything that is still open
+    instance->cancelAll();
+    instance->setSystemActing(false);   // compensation reopens finished items, so close everything that is still open
     status[instanceId] = "CANCELLED";
+
     instance->raiseEvent(EVT_CANCELLED);
     return true;
 }
