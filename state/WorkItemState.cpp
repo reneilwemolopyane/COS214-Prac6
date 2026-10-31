@@ -10,3 +10,4 @@ void WorkItemState::cancel(WorkItem& i)        { throw InvalidTransitionExceptio
 void WorkItemState::escalate(WorkItem& i)      { throw InvalidTransitionException("escalate", name(), i.getName()); }
 void WorkItemState::suspend(WorkItem& i)       { throw InvalidTransitionException("suspend", name(), i.getName()); }
 void WorkItemState::resume(WorkItem& i)        { throw InvalidTransitionException("resume", name(), i.getName()); }
+void WorkItemState::skip(WorkItem& i)          { throw InvalidTransitionException("skip", name(), i.getName()); }

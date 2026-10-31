@@ -2,10 +2,13 @@
 #define WORKFLOWDEFINITION_H
 
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
+#include <map>
 #include "tividy/core/Common.h"
+#include "tividy/core/ItemConfig.h"
 #include "tividy/composite_prototype/WorkflowComponent.h"
 #include "tividy/core/WorkflowInstance.h"
 
@@ -66,6 +69,13 @@ public:
     
     const DataMap& getRules() const;
 
+    /// Per-item configuration (guard, approval chain, decorators, service binding...). Created on first use.
+    ItemConfig& itemConfig(const std::string& itemName);
+    /// @return every item's configuration, copied into each new instance.
+    const std::map<std::string, ItemConfig>& getItemConfigs() const;
+    /// Ordering implied by SEQUENTIAL stages (Composite): (earlier item, later item) pairs.
+    std::vector<std::pair<std::string, std::string> > getImpliedDependencies() const;
+
 private:
 
     std::string id;
@@ -79,6 +89,8 @@ private:
     std::vector<std::pair<std::string, std::string> > dependencies;
 
     DataMap rules;
+
+    std::map<std::string, ItemConfig> itemConfigs;
 
     int instanceCounter;
 

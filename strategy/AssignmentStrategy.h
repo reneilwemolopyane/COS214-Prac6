@@ -23,6 +23,7 @@ class AssignmentStrategy {
     virtual std::string name()const = 0;
   protected:
     /** @brief Keeps only candidates holding the role the item needs. */
+    std::vector<Participant*> eligible(const WorkItem& item, const std::vector<Participant*>& candidates) const;
 };
 
 /** @brief First eligible participant. */

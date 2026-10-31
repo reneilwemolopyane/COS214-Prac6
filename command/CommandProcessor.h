@@ -1,51 +1,55 @@
+#pragma once
 /**
- * @file CommandProcessor.cpp
- * @brief Implementation of the Command pattern Invoker.
+ * @file CommandProcessor.h
+ * @brief Command pattern Invoker: runs, retries and compensates workflow commands.
  */
-#include "tividy/command/CommandProcessor.h"
-#include "tividy/core/WorkflowInstance.h"
-#include <algorithm>
+#include <cstddef>
+#include <vector>
+#include "tividy/command/Command.h"
 
-CommandProcessor::~CommandProcessor() {
-    for (std::size_t i = 0; i < history.size(); ++i)
-        delete history[i];
-}
+class WorkflowInstance;
 
-bool CommandProcessor::run(WorkflowCommand* command) {
-    if (!command) return false;
-    if (!owns(command)) history.push_back(command);
-    return attempt(command);
-}
+/**
+ * @brief Command pattern Invoker. One per WorkflowInstance.
+ *
+ * Runs commands, keeps them in a history, retries failed ones and undoes
+ * completed ones in reverse order (compensation). Every result is reported
+ * to its WorkflowInstance as an event.
+ * The processor owns every command it has been given.
+ */
+class CommandProcessor {
+public:
+    /** @param inst Instance that receives the events (not owned, may be null). */
+    explicit CommandProcessor(WorkflowInstance* inst = 0) : instance(inst) {}
 
-bool CommandProcessor::retry(WorkflowCommand* command) {
-    if (!command || !owns(command) || command->status != "FAILED") return false;
-    return attempt(command);
-}
+    /** @brief Deletes every command in the history. */
+    ~CommandProcessor();
 
-void CommandProcessor::compensate() {
-    // Newest first: undo the last thing that was done before the things it depended on.
-    for (std::size_t i = history.size(); i > 0; --i) {
-        WorkflowCommand* c = history[i - 1];
-        if (c->status != "DONE") continue;   // Failed or already undone commands have nothing to reverse.
-        c->undo();
-        c->status = "UNDONE";
-        if (instance) instance->raiseEvent(EVT_COMPENSATED, c->getWorkItemId(), c);
-    }
-}
+    /**
+     * @brief Takes ownership of a command and executes it.
+     * @return true if the command ends in status DONE (including after retries).
+     */
+    bool run(WorkflowCommand* command);
 
-bool CommandProcessor::attempt(WorkflowCommand* command) {
-    ++command->attempts;
-    bool ok = command->execute();
-    command->status = ok ? "DONE" : "FAILED";
-    if (instance) {
-        if (ok) instance->raiseEvent(command->successEvent(), command->getWorkItemId(), command);
-        else    instance->raiseEvent(EVT_FAILED, command->getWorkItemId(), command, command->getError());
-    }
-    // A FAILED event may have made the IncidentMonitor retry this command already,
-    // so return the final status rather than the result of this one attempt.
-    return command->status == "DONE";
-}
+    /** @brief Executes a FAILED command again. @return false if it is unknown or not FAILED. */
+    bool retry(WorkflowCommand* command);
 
-bool CommandProcessor::owns(WorkflowCommand* command) const {
-    return std::find(history.begin(), history.end(), command) != history.end();
-}
+    /** @brief Undoes every DONE command, newest first, and marks it UNDONE. */
+    void compensate();
+
+    /** @brief Commands run so far, oldest first (owned by the processor). */
+    const std::vector<WorkflowCommand*>& getHistory() const { return history; }
+
+private:
+    /** @brief One execute() call: counts the attempt, sets the status, raises the event. */
+    bool attempt(WorkflowCommand* command);
+
+    /** @brief Whether this command is already in the history. */
+    bool owns(WorkflowCommand* command) const;
+
+    WorkflowInstance* instance;                ///< Receives events (not owned).
+    std::vector<WorkflowCommand*> history;     ///< Owned commands, oldest first.
+
+    CommandProcessor(const CommandProcessor&);              ///< Not copyable: owns its commands.
+    CommandProcessor& operator=(const CommandProcessor&);   ///< Not assignable.
+};

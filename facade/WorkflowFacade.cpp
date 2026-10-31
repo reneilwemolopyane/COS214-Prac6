@@ -9,6 +9,10 @@ void WorkflowFacade::registerDefinition(WorkflowDefinition* definition) {
     repository.save(definition);
 }
 
+void WorkflowFacade::addParticipant(Participant* participant) {
+    engine.addParticipant(participant);
+}
+
 std::string WorkflowFacade::startWorkflow(const std::string& definitionId,const DataMap& data) {
 
     WorkflowDefinition* definition = repository.find(definitionId);

@@ -1,4 +1,5 @@
 #include "tividy/builder/WorkflowDefinition.h"
+#include "tividy/core/WorkflowInstance.h"
 #include <stdexcept>
 
 WorkflowDefinition::WorkflowDefinition(const std::string& id, int version)
@@ -24,7 +25,19 @@ WorkflowInstance* WorkflowDefinition::createInstance(const DataMap& data) {
 
     std::string instanceId = id + "-" + std::to_string(instanceCounter);
 
-    return new WorkflowInstance(instanceId, std::move(copy), data, version);
+    WorkflowInstance* instance = new WorkflowInstance(instanceId, copy, data, version);
+
+    {
+        std::vector<std::pair<std::string, std::string> > implied = getImpliedDependencies();
+        for (std::size_t i = 0; i < implied.size(); ++i) instance->addOrdering(implied[i].first, implied[i].second);
+    }
+    instance->setItemConfigs(itemConfigs);   // routing, approval, decorator and service settings
+
+    // Each dependency (from, to) means "to" waits for "from".
+    for (std::size_t i = 0; i < dependencies.size(); ++i)
+        instance->addDependency(dependencies[i].first, dependencies[i].second);
+
+    return instance;
 }
 
 std::string WorkflowDefinition::getId() const{ 
@@ -81,6 +94,16 @@ void WorkflowDefinition::addRule(const std::string& name, const std::string& val
     
     rules[name] = value;
 }
+
+std::vector<std::pair<std::string, std::string> > WorkflowDefinition::getImpliedDependencies() const {
+    std::vector<std::pair<std::string, std::string> > out;
+    if (root) root->collectOrdering(out);
+    return out;
+}
+
+ItemConfig& WorkflowDefinition::itemConfig(const std::string& itemName) { return itemConfigs[itemName]; }
+
+const std::map<std::string, ItemConfig>& WorkflowDefinition::getItemConfigs() const { return itemConfigs; }
 
 const DataMap& WorkflowDefinition::getRules() const { 
     

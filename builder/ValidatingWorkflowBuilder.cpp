@@ -1,5 +1,8 @@
 #include "ValidatingWorkflowBuilder.h"
 #include <queue>
+#include "tividy/interpreter/Expression.h"
+#include "tividy/chain_of_responsibility/ApprovalRouter.h"
+#include "tividy/decorator/DecoratorFactory.h"
 #include <stdexcept>
 
 ValidatingWorkflowBuilder::ValidatingWorkflowBuilder() {}
@@ -83,6 +86,57 @@ void ValidatingWorkflowBuilder::buildRule(const std::string& name, const std::st
 }
 
 
+void ValidatingWorkflowBuilder::buildGuard(const std::string& item, const std::string& expression) {
+    if (!exists(item)) throw std::invalid_argument("Guard for unknown work item: " + item);
+    delete ExpressionParser::parse(expression);          // syntax check only; throws invalid_argument
+    WorkflowBuilder::buildGuard(item, expression);
+}
+
+void ValidatingWorkflowBuilder::buildApproval(const std::string& item, const std::string& amountKey, const std::string& levels) {
+    if (!exists(item)) throw std::invalid_argument("Approval for unknown work item: " + item);
+    if (amountKey.empty()) throw std::invalid_argument("Approval for " + item + " needs an amount key");
+    delete ApprovalRouter::parse(levels);                // syntax check only; throws invalid_argument
+    WorkflowBuilder::buildApproval(item, amountKey, levels);
+}
+
+void ValidatingWorkflowBuilder::buildDecorations(const std::string& item, const std::string& spec) {
+    if (!exists(item)) throw std::invalid_argument("Decorations for unknown work item: " + item);
+    DecoratorFactory::validate(spec);
+    WorkflowBuilder::buildDecorations(item, spec);
+}
+
+void ValidatingWorkflowBuilder::buildDeadline(const std::string& item, long seconds) {
+    if (!exists(item)) throw std::invalid_argument("Deadline for unknown work item: " + item);
+    if (seconds <= 0) throw std::invalid_argument("Deadline must be positive: " + item);
+    WorkflowBuilder::buildDeadline(item, seconds);
+}
+
+void ValidatingWorkflowBuilder::buildSubProcess(const std::string& name, ExecutionMode mode) {
+    if (name.empty()) throw std::invalid_argument("Sub-process name must not be empty");
+    if (!stageNames.insert(name).second) throw std::invalid_argument("Duplicate stage name: " + name);
+    WorkflowBuilder::buildSubProcess(name, mode);
+}
+
+void ValidatingWorkflowBuilder::buildEscalation(const std::string& item, const std::string& role) {
+    if (!exists(item)) throw std::invalid_argument("Escalation for unknown work item: " + item);
+    if (role.empty()) throw std::invalid_argument("Escalation role must not be empty");
+    WorkflowBuilder::buildEscalation(item, role);
+}
+
+void ValidatingWorkflowBuilder::buildAssignmentRule(const std::string& item, const std::string& rule) {
+    if (!exists(item)) throw std::invalid_argument("Assignment rule for unknown work item: " + item);
+    if (rule != "role" && rule != "shortest-queue" && rule != "round-robin")
+        throw std::invalid_argument("Unknown assignment rule: " + rule);
+    WorkflowBuilder::buildAssignmentRule(item, rule);
+}
+
+void ValidatingWorkflowBuilder::buildService(const std::string& item, const std::string& connector, const std::string& operation,
+                                             const std::string& params, const std::string& undoOperation) {
+    if (!exists(item)) throw std::invalid_argument("Service for unknown work item: " + item);
+    if (connector.empty() || operation.empty()) throw std::invalid_argument("Service binding needs a connector and an operation");
+    WorkflowBuilder::buildService(item, connector, operation, params, undoOperation);
+}
+
 WorkflowDefinition* ValidatingWorkflowBuilder::getResult() {
 
     if (itemRoles.empty()) {
@@ -94,6 +148,10 @@ WorkflowDefinition* ValidatingWorkflowBuilder::getResult() {
         throw std::runtime_error("Cannot build: every work item needs a role");
     }
 
+    {   // ordering implied by SEQUENTIAL stages must not contradict the explicit dependencies
+        std::vector<std::pair<std::string, std::string> > implied = product->getImpliedDependencies();
+        dependencies.insert(dependencies.end(), implied.begin(), implied.end());
+    }
     if (hasCircularDependency()){
 
         throw std::runtime_error("Cannot build: circular dependency between work items");

@@ -1,6 +1,6 @@
 #include "Participant.h"
 
-Participant::Participant(const std::string& id, const std::string& name) : id(pid), name(pname), workload(0) {}
+Participant::Participant(const std::string& pid, const std::string& pname) : id(pid), name(pname), workload(0) {}
 
 const std::string& Participant::getId()const{
     return id;
@@ -19,12 +19,12 @@ const std::set<std::string>& Participant::getRoles()const{
     return roles;
 }
 
-int getWorkload()const{
+int Participant::getWorkload()const{
     return workload;
 }
-void itemAssigned(){
+void Participant::itemAssigned(){
     ++workload;
 }
-void itemReleased(){
-    if(worklod > 0) --workload;
+void Participant::itemReleased(){
+    if(workload > 0) --workload;
 }

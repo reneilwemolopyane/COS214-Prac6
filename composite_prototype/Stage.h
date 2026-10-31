@@ -6,6 +6,15 @@
 
 class Stage : public WorkflowComponent {
 public:
+    struct RuntimeSnapshot {
+        bool activated;
+        bool cancelledFlag;
+        bool finishedNotified;
+        std::size_t cursor;
+        bool cursorActivated;
+    };
+    RuntimeSnapshot captureRuntimeSnapshot() const;
+    void restoreRuntimeSnapshot(const RuntimeSnapshot& snapshot);
     explicit Stage(const std::string& name = "", ExecutionMode m = SEQUENTIAL);
     ~Stage() override;
 
@@ -18,6 +27,7 @@ public:
     std::size_t childCount() const;
     WorkflowComponent* childAt(std::size_t index) const;
     ExecutionMode getMode() const { return mode; }
+    void setMode(ExecutionMode m) { mode = m; }   ///< Used by the builder before the stage is cloned.
 
     void start() override;
     void activate() override;
@@ -30,6 +40,11 @@ public:
     WorkflowComponent* clone() const override;
     std::string getName() const override;
     void accept(WorkflowVisitor& v) override;
+    void collectItems(std::vector<std::pair<WorkItem*, WorkflowComponent*> >& out) override;
+    bool replaceChild(WorkflowComponent* oldChild, WorkflowComponent* wrapper) override;
+    Stage* asStage() override { return this; }
+    const Stage* asStage() const override { return this; }
+    void collectOrdering(std::vector<std::pair<std::string, std::string> >& out) override;
 
 protected:
     std::string name;

@@ -1,3 +1,4 @@
+#include <map>
 #include "tividy/state/States.h"
 #include "tividy/composite_prototype/WorkItem.h"
 
@@ -6,6 +7,7 @@ std::string CreatedState::name() const { return "Created"; }
 WorkItemState* CreatedState::instance() { static CreatedState s; return &s; }
 void CreatedState::makeAvailable(WorkItem& i) { i.setState(AvailableState::instance()); }
 void CreatedState::cancel(WorkItem& i)        { i.setState(CancelledState::instance()); }
+void CreatedState::skip(WorkItem& i)          { i.setState(SkippedState::instance()); }
 
 // ---- AvailableState ----
 std::string AvailableState::name() const { return "Available"; }
@@ -27,6 +29,7 @@ WorkItemState* EscalatedState::instance() { static EscalatedState s; return &s; 
 void EscalatedState::start(WorkItem& i)    { i.setState(InProgressState::instance()); }
 void EscalatedState::complete(WorkItem& i) { i.setState(CompletedState::instance()); }
 void EscalatedState::cancel(WorkItem& i)   { i.setState(CancelledState::instance()); }
+void EscalatedState::assign(WorkItem& i)   { i.setState(AssignedState::instance()); }
 
 // ---- InProgressState ----
 std::string InProgressState::name() const { return "InProgress"; }
@@ -47,5 +50,21 @@ std::string CompletedState::name() const { return "Completed"; }
 WorkItemState* CompletedState::instance() { static CompletedState s; return &s; }
 std::string RejectedState::name() const { return "Rejected"; }
 WorkItemState* RejectedState::instance() { static RejectedState s; return &s; }
+WorkItemState* WorkItemState::byName(const std::string& stateName) {
+    // One table of the shared state objects replaces an if/else chain on names.
+    static std::map<std::string, WorkItemState*> table;
+    if (table.empty()) {
+        WorkItemState* all[] = { CreatedState::instance(), AvailableState::instance(), AssignedState::instance(),
+                                 InProgressState::instance(), SuspendedState::instance(), EscalatedState::instance(),
+                                 CompletedState::instance(), RejectedState::instance(), CancelledState::instance(),
+                                 SkippedState::instance() };
+        for (std::size_t i = 0; i < sizeof(all) / sizeof(all[0]); ++i) table[all[i]->name()] = all[i];
+    }
+    std::map<std::string, WorkItemState*>::const_iterator it = table.find(stateName);
+    return it == table.end() ? 0 : it->second;
+}
+
+std::string SkippedState::name() const { return "Skipped"; }
+WorkItemState* SkippedState::instance() { static SkippedState s; return &s; }
 std::string CancelledState::name() const { return "Cancelled"; }
 WorkItemState* CancelledState::instance() { static CancelledState s; return &s; }

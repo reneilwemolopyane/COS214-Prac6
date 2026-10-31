@@ -5,6 +5,7 @@
 #include "tividy/command/CommandProcessor.h"
 #include "tividy/core/WorkflowInstance.h"
 #include <algorithm>
+#include <exception>
 
 CommandProcessor::~CommandProcessor() {
     for (std::size_t i = 0; i < history.size(); ++i)
@@ -35,10 +36,16 @@ void CommandProcessor::compensate() {
 
 bool CommandProcessor::attempt(WorkflowCommand* command) {
     ++command->attempts;
-    bool ok = command->execute();
+    bool ok = false;
+    try { ok = command->execute(); }
+    catch (const std::exception& e) {          // a refused action (invalid transition, decorator veto)
+        command->error = e.what();
+        command->status = "REFUSED";
+        throw;                                  // the engine records REFUSED in the audit trail
+    }
     command->status = ok ? "DONE" : "FAILED";
     if (instance) {
-        if (ok) instance->raiseEvent(command->successEvent(), command->getWorkItemId(), command);
+        if (ok) { if (command->announcesSuccess()) instance->raiseEvent(command->successEvent(), command->getWorkItemId(), command, command->describe()); }
         else    instance->raiseEvent(EVT_FAILED, command->getWorkItemId(), command, command->getError());
     }
     // A FAILED event may have made the IncidentMonitor retry this command already,

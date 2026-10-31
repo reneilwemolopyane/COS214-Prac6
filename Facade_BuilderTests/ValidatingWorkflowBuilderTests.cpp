@@ -39,13 +39,13 @@ TEST_CASE("ValidatingWorkflowBuilder rejects duplicate stage names") {
 
 TEST_CASE("ValidatingWorkflowBuilder rejects an empty work item name") {
     ValidatingWorkflowBuilder builder;
-
+    builder.buildStage("S");
     CHECK_THROWS(builder.buildWorkItem("", "Manager"));
 }
 
 TEST_CASE("ValidatingWorkflowBuilder rejects duplicate work item names") {
     ValidatingWorkflowBuilder builder;
-
+    builder.buildStage("S");
     builder.buildWorkItem("Review request", "Manager");
 
     CHECK_THROWS(builder.buildWorkItem("Review request", "Requester"));
@@ -53,7 +53,7 @@ TEST_CASE("ValidatingWorkflowBuilder rejects duplicate work item names") {
 
 TEST_CASE("ValidatingWorkflowBuilder rejects a work item without a role") {
     ValidatingWorkflowBuilder builder;
-
+    builder.buildStage("S");
     builder.buildWorkItem("Review request", "");
 
     CHECK_THROWS(builder.getResult());
@@ -61,7 +61,7 @@ TEST_CASE("ValidatingWorkflowBuilder rejects a work item without a role") {
 
 TEST_CASE("ValidatingWorkflowBuilder rejects a dependency on an unknown item") {
     ValidatingWorkflowBuilder builder;
-
+    builder.buildStage("S");
     builder.buildWorkItem("Submit request", "Requester");
 
     CHECK_THROWS(builder.buildDependency("Submit request", "Unknown item"));
@@ -69,7 +69,7 @@ TEST_CASE("ValidatingWorkflowBuilder rejects a dependency on an unknown item") {
 
 TEST_CASE("ValidatingWorkflowBuilder rejects a self-dependency") {
     ValidatingWorkflowBuilder builder;
-
+    builder.buildStage("S");
     builder.buildWorkItem("Review request", "Manager");
 
     CHECK_THROWS(builder.buildDependency("Review request", "Review request"));
@@ -77,7 +77,7 @@ TEST_CASE("ValidatingWorkflowBuilder rejects a self-dependency") {
 
 TEST_CASE("ValidatingWorkflowBuilder rejects circular dependencies") {
     ValidatingWorkflowBuilder builder;
-
+    builder.buildStage("S");
     builder.buildWorkItem("A", "Role A");
     builder.buildWorkItem("B", "Role B");
 
