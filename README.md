@@ -1,61 +1,89 @@
-# COS214-Prac6
+# TIVIDY – generic workflow management system (COS 214, 2026)
 
-## Team Members
+One reusable **C++11** workflow engine running **two industries**:
 
-| Student Name and Surname | Student Number |
+| Industry | Workflow | Definition id |
+|---|---|---|
+| Insurance | Motor vehicle accident claim | `motor-claim` |
+| Education | University bursary application | `bursary-application` |
+
+Everything industry-specific lives in `scenarios/` (configuration text, participants, stub adapters).
+The engine (every other module) contains no industry names. Details: [`docs/PATTERNS.md`](docs/PATTERNS.md),
+[`docs/DESIGN_DECISIONS.md`](docs/DESIGN_DECISIONS.md), [`docs/REQUIREMENTS_TRACEABILITY.md`](docs/REQUIREMENTS_TRACEABILITY.md).
+
+## Dependencies
+* A C++11 compiler (GCC ≥ 7, Clang ≥ 6, MSVC 2019), **CMake ≥ 3.10**, Make/Ninja
+* Tests use **doctest** (vendored in `third_party/doctest`; nothing to install)
+* Optional: Doxygen (API docs), Docker
+
+## Build
+```bash
+cmake -S . -B build
+cmake --build build -j
+```
+Targets: `tividy_tui` (text UI), `tividy_engine`, `tividy_scenarios` and the test executables.
+
+## Run – interactive text UI (both industries)
+```bash
+./build/tividy_tui            # add --no-color for plain output
+```
+`1` start a workflow → pick a sample case → `1` do work on an item (start / complete / reject / escalate / act as someone else / call its external system).
+Switch industry with `3`; switch a stub external system off with `4` to see retries and an incident.
+Inside an instance: history, notifications/incidents/commands, progress reports (Visitors), undo last step (Memento), cancel with payment reversal (Command undo).
+
+A scripted run (both industries, an exception path in each) is `./build/tividy_tui --no-color < tests/tui_smoke.txt`.
+
+### Suggested demo
+| Industry | Case | What it shows |
+|---|---|---|
+| Insurance | `repair-small` | happy path; write-off branch **skipped** |
+| Insurance | `writeoff-large` | WRITE_OFF decision skips the repair chain (dead-path elimination); approval climbs to Senior Manager |
+| Insurance | `suspicious` | fraud score routes to the investigator |
+| Insurance | `lapsed-policy` | start item → *call external system* (valid=false) → reject → rejection cascade |
+| Insurance | `missing-docs` | validation decorator refuses; **let 8 days pass** → documents escalate to the Claims Handler automatically |
+| Insurance | `repair-small` + let 2 days pass at *Approve settlement amount* | priority halves the deadline; approval climbs a level per expired deadline |
+| Education | `merit-funded` / `need-large` | merit vs need route; amount climbs Faculty Officer → … → Dean |
+| Education | `fund-exhausted` | award branch skipped, student waitlisted and notified |
+| Education | `deregistered` | rejection path |
+| both | outage toggle `4` → *payment down* | retries, incident; recover; **cancel** reverses the payment |
+
+## Test
+```bash
+cd build && ctest --output-on-failure
+```
+| Suite | Covers |
 |---|---|
-| Lizalise Mbonisweni | u23587874 |
-| Boikemelo Masoka | u25128648 |
-| Thembelisha Skosana | u25224663 |
-| Lethabo Molobi | u25090209 |
-| Boitumelo Monareng | u25208943 |
-| Reneilwe Molopyane | u25161874 |
-| Dingalethu Ngumbela | u25170547 |
+| `ScenarioIntegrationTests` | **both industries end to end**: routing, dead paths, approval chain, escalation, decorators, adapters, outages, compensation, invalid actions, instance isolation |
+| `InterpreterTests` | rule language, approval router |
+| `WorkflowBuilderTests` | Builder / Director / Facade / repository |
+| `StateCompositeTests`, `ChainDecoratorTests`, `AdapterTests`, `MediatorStrategyTests`, `VisitorMementoTests`, `ObserverEngineTests` | per-pattern and engine wiring |
+| `TuiSmoke_*` | the real TUI driven by a recorded keyboard session |
 
-## Task 1: Research
+## Quality gates
+```bash
+# memory / undefined-behaviour checking (all suites clean)
+cmake -S . -B build-asan -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g -O1"
+cmake --build build-asan -j && (cd build-asan && ctest --output-on-failure)
+# warnings
+cmake -S . -B build-warn -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wpedantic"
+```
+Time and deadlines are simulated: TUI menu *5 / 9 let time pass*.
 
-### 1. Workflow Basics: Definition vs Instance
+## Documentation (Doxygen)
+```bash
+doxygen Doxyfile && open docs/api/html/index.html
+```
 
-A Workflow Management System is a system that defines, manages, and executes workflows using software based on the workflow logic. It automates the execution of applications and is robust against performance variations and failures.A workflow definition is a structured blueprint or electronic template that outlines the exact sequence of steps, rules, and participants required to complete a specific task or business process.Each time a workflow definition is published, a new version is created. By default, the new version is used by existing instances of the workflow. If a stage is removed, active instances on the stage continue to use the previous version until they progress to a stage that is available in the newly published version.A 'Workflow Instance' is a specific occurrence of a workflow that is currently running or being executed, involving a series of interconnected computational tasks with data and control dependencies.  
+## Repository layout
+| Folder | Role |
+|---|---|
+| `core/ mediator/ command/ state/ strategy/ observer/ composite_prototype/ visitor/ adapter/ builder/ facade/ decorator/ chain_of_responsibility/ memento/ interpreter/` | **generic engine** (`tividy_engine`) |
+| `scenarios/` | **industry configuration** (`tividy_scenarios`): directors, participants, stub adapters, `Session` |
+| `tui/` | interactive text interface |
+| `tests/`, `Facade_BuilderTests/` | doctest suites |
+| `docs/` | research, UML (`.vpp` + exports), design decisions, traceability |
+| `report/` | final PDF report |
 
-### 2. Work Structure
-
-A workflow can be structured at different levels, with individual work items grouped into larger stages or sub-processes to represent complex processes more clearly. Work items can also have dependencies, meaning one task may need to be completed before another can begin, while some tasks can run in parallel and later join together. During execution, work items can move through different states such as available, assigned, running, completed or suspended, so TIVIDY needs to track their current state, completed work and what can happen next. 
-
-### 3. Assignment and Routing
-Resources are modelled separately from the process, and a resource is anything capable of doing work, whether a person or a piece of equipment. People sit in an organisational structure of positions, units and teams, and have roles, capabilities, schedules and histories (Russell et al., 2004). Roles separate who does the work from the process definition. A task names a role such as Manager, and the person who fills it is only chosen when the work item becomes runnable, so one definition can serve many instances with different people (Russell et al., 2004). Allocation strategies are also kept separate from the work itself. Some are fixed at design time, such as role-based, capability-based, history-based and separation of duties, where the person who prepares a check cannot countersign it. Others select among eligible people, for example at random, round robin or shortest queue, and allocation can happen early, when the item becomes enabled, or late (Russell et al., 2004). A system can offer an item to one resource or to many, where the first to claim it wins, or allocate it directly. Under push the system assigns the item, and under pull the resource claims it. A work item moves from created to offered, allocated, started and completed, with suspended and failed as exceptions, and each change is started either by the system or by the resource. Assignment can also change through delegation, deallocation and escalation, where a stalled item is automatically reassigned after a deadline passes, and some tasks are automatic and need no person at all (Russell et al., 2004). For TIVIDY, this means roles, allocation rules and escalation deadlines belong to the workflow definition, so they can change without rewriting the work-item classes. The specific participants assigned, their workload and the assignment history belong to each running instance.
-
-### 4. Approvals, Rejection and Escalation
-
-Approval is a normal state in a workflow, not an error: the workflow pauses until a decision arrives and then follows the matching outcome of approval, rejection or escalation (Temporal Technologies, 2026). Approval rules vary between processes. Steps may be approved sequentially or in parallel, and a step may need every approver, a quorum, or any one approver, while a single rejection can veto the whole step (django-workflow-kit, n.d.). Rejection stops the request from reaching later approval steps, and the approver must record a reason that stays visible on the request (ServiceNow, n.d.). Escalation stops work from waiting indefinitely. If no decision arrives before a timeout, the workflow re-notifies the approver, then notifies their manager, and finally applies a default decision. Approvers can also delegate when unavailable (EmpowerID, n.d.; ServiceNow, n.d.). For TIVIDY, this means approval modes, timeouts and escalation chains belong to the workflow definition, so they can change without rewriting the work-item classes. The approval status, decision reason and escalation history belong to each running instance.
-
-### 5. Events and Failures
-
- A workflow system must react to events such as completed tasks, expired deadlines and errors, which Russell, van der Aalst and ter Hofstede (2006) group into five exception types: work item failure, deadline expiry, resource unavailability, external triggers and constraint violations. They show that each exception must be handled at three levels: the individual work item, the whole case, and a recovery action such as rollback or compensation. Modern engines put this into practice by retrying temporary failures automatically, sending business errors down an alternative path, and raising an incident for a person to fix once retries run out, so that no failure goes unnoticed (Camunda, 2025). For TIVIDY, this means failure-handling rules belong to the workflow definition, while retry attempts, actual errors and open incidents belong to each running instance.
-
-
-### 6. Integration and Reusability
-Workflow systems keep the engine separate from external systems through defined interfaces: the WfMC Reference Model has dedicated interfaces for invoking external applications and for communicating with other engines (Workflow Management Coalition, 1995), and Camunda uses outbound connectors to call external systems and inbound connectors to bring events in (Camunda, 2025). Integration details are configuration, not code: Power Automate's connection references let one connection be reused across flows and environments without editing each action (Microsoft, 2024). For TIVIDY, this means a generic integration abstraction (databases, APIs, notifications) with configurable endpoints, and routing and assignment rules supplied per workflow, so our scenario is one application of a reusable engine.
-
-### 7. History, Monitoring and Versioning
-Workflow history serves as the chronological, event driven, append only log of all runtime events including state transitions across task lifecycles which provides the foundation for durable execution, crash recovery, and state replay. As a core component of history, audit information captures standardized system events, participant interactions, and execution data using the  prefix/suffix framework for legal compliance and accountability, extracted via push/pull ETL pipelines into structured relational tables while maintaining a strict physical separation between volatile runtime databases and immutable history streams to prevent performance degradation. 
-
-Parallel to history, workflow versioning manages process blueprint evolution by enforcing in flight instance isolation guaranteeing that active, long running workflow instances complete safely on their originating definition version while new executions launch on the updated version, thereby preventing schema mismatches and preserving audit trail integrity. Finally, workflow monitoring provides the real time operational analysis and visual representation of active process instances during runtime, empowering administrators to detect bottlenecks, adjust running instance behavior dynamically, and enhance organizational responsiveness when handling customer status inquiries (such as determining who is processing a specific work item).
-
-### References
-
-Russell, N., ter Hofstede, A.H.M., Edmond, D. and van der Aalst, W.M.P., 2004. Workflow Resource Patterns. Technische Universiteit Eindhoven. Available at: https://pure.tue.nl/ws/files/1984893/591788.pdf
-Workflow Management Coalition (1998). The Workflow Reference Model. http://www.workflowpatterns.com/documentation/documents/tc003v11.pdf 
-Camunda. Glossary, Camunda 8 Docs. https://docs.camunda.io/docs/reference/glossary 
-Microsoft. Use connector actions in desktop flows, Microsoft Learn. https://learn.microsoft.com/en-us/power-automate/desktop-flows/how-to/use-connector-actions
-
-Zur Muehlen, M., 2004. Workflow-based process controlling: foundation, design, and application of workflow-driven process information systems (Vol. 6). Michael zur Muehlen.
-Schiefer, J., Jeng, J.J. and Bruckner, R.M., 2003, September. Real-time workflow audit data integration into data warehouse systems. In ECIS (pp. 1697-1706).
-Koksal, P., Arpinar, S.N. and Dogac, A., 1998. Workflow history management. ACM Sigmod Record, 27(1), pp.67-75.
-Rolfe, P.A., 2001. Code versioning in a workflow management system (Doctoral dissertation, Massachusetts Institute of Technology).
-https://docs.camunda.io/docs/components/best-practices/operations/versioning-process-definitions/
-
-
-Camunda (2025) Dealing with problems and exceptions. Camunda 8 Documentation. Available at: https://docs.camunda.io/docs/components/best-practices/development/dealing-with-problems-and-exceptions/
-
-Russell, N., van der Aalst, W.M.P. and ter Hofstede, A.H.M. (2006) 'Workflow exception patterns', in Advanced Information Systems Engineering (CAiSE 2006). Lecture Notes in Computer Science, vol. 4001. Berlin: Springer, pp. 288–302. Available at: https://doi.org/10.1007/11767138_20
+## Engineering extras
+GitHub Actions CI (`.github/workflows/ci.yml`: C++ build + `ctest` on Linux), a `Dockerfile`, Doxygen config.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the branching and review process.

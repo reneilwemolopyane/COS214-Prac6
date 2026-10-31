@@ -1,0 +1,14 @@
+PROJECT_NAME           = "TIVIDY workflow engine"
+PROJECT_BRIEF          = "Generic workflow management system, C++11"
+OUTPUT_DIRECTORY       = docs/api
+INPUT                  = core mediator command state strategy observer composite_prototype visitor adapter builder facade decorator chain_of_responsibility memento interpreter scenarios tui README.md
+FILE_PATTERNS          = *.h *.cpp *.md
+RECURSIVE              = NO
+USE_MDFILE_AS_MAINPAGE = README.md
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+JAVADOC_AUTOBRIEF      = YES
+GENERATE_LATEX         = NO
+GENERATE_HTML          = YES
+HAVE_DOT               = NO
+QUIET                  = YES

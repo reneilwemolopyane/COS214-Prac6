@@ -1,0 +1,37 @@
+flowchart TD
+  start([Application submitted]) --> reg[Verify registration<br/>student-records adapter]
+  reg --> regok{registered?}
+  regok -- no --> rej1[Reject: reason recorded]
+  regok -- yes --> docs[Collect documents<br/>validation decorator]
+  docs --> fork1{{fork}}
+  fork1 --> acad[Academic record check]
+  fork1 --> means[Means test<br/>income-verification adapter]
+  fork1 --> ref[Reference check]
+  acad --> merit{{guard: bursaryType == merit}}
+  means --> need{{guard: bursaryType == need}}
+  merit -- true --> mr[Merit ranking]
+  merit -- false --> sk1[Skipped]
+  need -- true --> nv[Need verification]
+  need -- false --> sk2[Skipped]
+  mr --> join1{{join}}
+  sk1 --> join1
+  nv --> join1
+  sk2 --> join1
+  ref --> join1
+  join1 --> short[Shortlist decision]
+  short --> shortok{shortlisted?}
+  shortok -- no --> rej2[Reject: below threshold]
+  shortok -- yes --> fund{fundBalance >= requestedAmount ?}
+  fund -- no --> wait[Waitlist applicant]
+  fund -- yes --> appr[Approve bursary award<br/>chain: Faculty Officer, Committee, Dean, Finance Director]
+  appr --> timeout{approver responded?}
+  timeout -- no --> esc[Escalate to next level, fresh deadline] --> appr
+  timeout -- yes --> letter[Issue award letter] --> accept[Student accepts award] --> pay[Release bursary payment<br/>security + audit decorators, payment adapter]
+  pay --> payok{gateway up?}
+  payok -- no --> retry[Retry, then raise incident] --> pay
+  payok -- yes --> notify[Notify student]
+  wait --> notify
+  notify --> close[Close application]
+  rej1 --> close
+  rej2 --> close
+  close --> fin([Final: COMPLETED / REJECTED])

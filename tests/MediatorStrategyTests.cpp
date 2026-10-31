@@ -221,7 +221,7 @@ TEST_CASE("Mediator: no eligible participant escalates the item") {
     in.coord.start();
 
     CHECK_GE(in.log.count(EVT_FAILED), 1);
-    CHECK(in.police.isFinished());
+    CHECK_EQ(std::string("Escalated"), in.police.getStateName());
 }
 
 TEST_CASE("Mediator: rejected prerequisite escalates dependents") {
@@ -230,8 +230,7 @@ TEST_CASE("Mediator: rejected prerequisite escalates dependents") {
     in.police.start();
     in.police.reject("report invalid");
     in.run(in.inspect);
-
-    CHECK(in.decision.isFinished());
+    CHECK_EQ(std::string("Escalated"), in.decision.getStateName());
     CHECK(in.coord.isFinished());
 }
 
