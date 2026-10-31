@@ -5,7 +5,7 @@
 #include "tividy/observer/Observers.h"
 
 
-InstanceCoordinator::InstanceCoordinator(WorkAssigner* a, WorkflowSubject* s, WorkflowInstance* instance)
+InstanceCoordinator::InstanceCoordinator(WorkAssigner* a, WorkflowSubject* s)
     : assigner(a), events(s), started(false){
     if (assigner) assigner->setMediator(this);
 }
@@ -103,7 +103,7 @@ void InstanceCoordinator::releaseAvailableItems() {
 
         Participant* participant = assigner ? assigner->assign(*item, pool) : nullptr;
         if (participant) {
-          item->assign(*participant);
+          item->assign(participant);
 
            DataMap payload;
            payload["assignee"] = participant->getName();
