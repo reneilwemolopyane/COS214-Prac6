@@ -112,6 +112,7 @@ void WorkflowInstance::start() {
 
     // The coordinator releases (and assigns) every item whose prerequisites are met.
     coordinator->start();
+    
 }
 
 ItemConfig WorkflowInstance::getItemConfig(const std::string& itemId) const {
