@@ -44,7 +44,7 @@ WorkflowInstance::WorkflowInstance(const std::string& id,
       monitor(new IncidentMonitor(processor)),
       assigner(0),
       clockSeconds(0),
-      actor(0) {
+      actor(0), systemActing(false) {
     // Standard reactions. Whoever creates the instance can attach more.
     attach(audit);                          // every event
     attach(EVT_COMPLETED, tracker);
@@ -150,20 +150,24 @@ void WorkflowInstance::applyDecorations() {
         if (cfg != itemConfigs.end() && !cfg->second.decorations.empty()) {
             // security:<Role> passes when the acting participant holds that role.
             DecoratorFactory::Context perItem = ctx;
-            Participant** who = &actor;
-            perItem.actorRole = [who, cfg]() -> std::string {
-                if (!*who) return "";
+                        Participant** who = &actor;
+            const bool* sys = &systemActing;
+            perItem.actorRole = [who, sys, cfg]() -> std::string {
                 const std::string& spec = cfg->second.decorations;
+                std::string need;
                 std::size_t p = spec.find("security:");
                 if (p != std::string::npos) {
                     std::size_t e = spec.find(',', p);
-                    std::string need = spec.substr(p + 9, e == std::string::npos ? std::string::npos : e - p - 9);
+                    need = spec.substr(p + 9, e == std::string::npos ? std::string::npos : e - p - 9);
                     std::size_t a = need.find_first_not_of(" "), b = need.find_last_not_of(" ");
                     need = a == std::string::npos ? "" : need.substr(a, b - a + 1);
-                    if ((*who)->hasRole(need)) return need;
                 }
+                if (*sys) return need;   // the engine itself is acting (cancel / compensation)
+                if (!*who) return "";
+                if (!need.empty() && (*who)->hasRole(need)) return need;
                 return (*who)->getRoles().empty() ? std::string() : *(*who)->getRoles().begin();
             };
+
             WorkflowComponent* wrapped = DecoratorFactory::wrap(front, cfg->second.decorations, perItem);
             if (wrapped != front) {
                 // The decorator adopted `front`; put it where the item was in the tree.
