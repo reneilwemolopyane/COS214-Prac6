@@ -2,6 +2,7 @@
 #define WORKFLOWFACADE_H
 
 //#include <memory>
+#include <stdexcept>
 #include <string>
 #include "tividy/facade/DefinitionRepository.h"
 #include "tividy/builder/WorkflowDefinition.h"
@@ -24,6 +25,12 @@ public:
      * @throws std::invalid_argument if @p definition is null.
      */
     void registerDefinition(WorkflowDefinition* definition);
+
+    /**
+     * @brief Adds a participant that workflows started afterwards can assign work to.
+     * The engine takes ownership of @p participant.
+     */
+    void addParticipant(Participant* participant);
 
     /**
      * @brief Create, register and start a new independent instance.

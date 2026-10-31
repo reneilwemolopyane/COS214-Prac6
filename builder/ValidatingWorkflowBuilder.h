@@ -34,6 +34,16 @@ public:
     void buildRule(const std::string& name, const std::string& value) override;
 
     /// @throws std::runtime_error if there are no items, an item has no role, or dependencies form a cycle.
+    void buildGuard(const std::string& item, const std::string& expression) override;
+    void buildApproval(const std::string& item, const std::string& amountKey, const std::string& levels) override;
+    void buildDecorations(const std::string& item, const std::string& spec) override;
+    void buildDeadline(const std::string& item, long seconds) override;
+    void buildSubProcess(const std::string& name, ExecutionMode mode) override;
+    void buildEscalation(const std::string& item, const std::string& role) override;
+    void buildAssignmentRule(const std::string& item, const std::string& rule) override;
+    void buildService(const std::string& item, const std::string& connector, const std::string& operation,
+                      const std::string& params, const std::string& undoOperation = "reverse") override;
+
     WorkflowDefinition* getResult() override;
 
     /// @return true if a work item with this name has been added.

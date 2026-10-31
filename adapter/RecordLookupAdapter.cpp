@@ -1,6 +1,7 @@
 #include "AdapterHelpers.h"
 #include "RecordLookupAdapter.h"
 
+
 // Checks the request, then that the service is reachable, then hands it to the right method.
 ConnectorResult RecordLookupAdapter::execute(const ConnectorRequest& request) {
     if (adaptee == 0) return failed(n, false, "no lookup client");

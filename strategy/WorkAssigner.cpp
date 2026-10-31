@@ -1,12 +1,12 @@
-#include "WorkAssigner.h"
-#include "WorkItem.h"
-#include "WorkflowEvent.h"
+#include "tividy/strategy/WorkAssigner.h"
+#include "tividy/composite_prototype/WorkItem.h"
+#include "tividy/core/Participant.h"
 
 WorkAssigner::WorkAssigner(WorkflowMediator* m) : defaultStrategy(nullptr){
     setMediator(m);
 }
 
-WorkAssigner::~WorkAssigner{
+WorkAssigner::~WorkAssigner(){
     delete defaultStrategy;
     for(std::map<std::string, AssignmentStrategy*>::iterator it = strategies.begin(); it != strategies.end(); ++it){
         delete it->second;
@@ -37,10 +37,8 @@ Participant* WorkAssigner::assign(WorkItem& item, const std::vector<Participant*
     Participant* p = chosen ? chosen->selectParticipant(item, pool) : nullptr;
 
     if (!p && mediator) {
-        DataMap d;
-        d["reason"]   = "no eligible participant";
-        d["strategy"] = chosen ? chosen->name() : "none";
-        mediator->notify(this, WorkflowEvent(EVT_FAILED, item.getId(), d));
+        std::string strategyName = chosen ? chosen->name() : std::string("none");
+        mediator->notify(this, WorkflowEvent(EVT_FAILED, nullptr, item.getId(), nullptr, "no eligible participant (strategy: " + strategyName + ")"));
     }
     return p;
 }

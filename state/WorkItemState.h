@@ -18,6 +18,15 @@ public:
     virtual void escalate(WorkItem& i);
     virtual void suspend(WorkItem& i);
     virtual void resume(WorkItem& i);
+    /** @brief Branch not taken: Created -> Skipped (dead-path elimination). */
+    virtual void skip(WorkItem& i);
+
+    /** How the mediator sees a state: still open, done, branch not needed, or closed without success. */
+    enum Disposition { OPEN, DONE, NOT_NEEDED, BLOCKED };
+    virtual Disposition disposition() const { return OPEN; }
+    virtual bool isRejection() const { return false; }
+    /** @return the shared state object with this name (used when a memento restores an item), or null. */
+    static WorkItemState* byName(const std::string& stateName);
 
     virtual bool isFinal() const { return false; }
     virtual bool isCreated() const { return false; }

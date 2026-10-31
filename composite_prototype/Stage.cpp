@@ -1,4 +1,5 @@
 #include "tividy/composite_prototype/Stage.h"
+#include "tividy/composite_prototype/WorkItem.h"
 #include <stdexcept>
 
 Stage::Stage(const std::string& n, ExecutionMode m)
@@ -155,10 +156,63 @@ void Stage::accept(WorkflowVisitor& v) {
     }
 }
 
+void Stage::collectItems(std::vector<std::pair<WorkItem*, WorkflowComponent*> >& out) {
+    for (std::size_t i = 0; i < children.size(); ++i) children[i]->collectItems(out);
+}
+
+// Composite at work: a SEQUENTIAL group orders its children (every item of the previous child before every
+// item of the next); a PARALLEL group adds no ordering. Nested groups contribute their own ordering first.
+void Stage::collectOrdering(std::vector<std::pair<std::string, std::string> >& out) {
+    for (std::size_t i = 0; i < children.size(); ++i) children[i]->collectOrdering(out);
+    if (mode != SEQUENTIAL) return;
+    for (std::size_t i = 1; i < children.size(); ++i) {
+        std::vector<std::pair<WorkItem*, WorkflowComponent*> > before, after;
+        children[i - 1]->collectItems(before);
+        children[i]->collectItems(after);
+        for (std::size_t a = 0; a < before.size(); ++a)
+            for (std::size_t b = 0; b < after.size(); ++b)
+                out.push_back(std::make_pair(before[a].first->getId(), after[b].first->getId()));
+    }
+}
+
+// The wrapper already holds oldChild (a decorator's constructor adopts it); this puts the
+// wrapper in the same slot so the tree order and the parent link are preserved.
+bool Stage::replaceChild(WorkflowComponent* oldChild, WorkflowComponent* wrapper) {
+    for (std::size_t i = 0; i < children.size(); ++i) {
+        if (children[i] == oldChild) {
+            children[i] = wrapper;
+            wrapper->setParent(this);
+            return true;
+        }
+        if (children[i]->replaceChild(oldChild, wrapper)) return true;
+    }
+    return false;
+}
+
 SubProcess::SubProcess(const std::string& n, ExecutionMode m) : Stage(n, m) {}
 
 WorkflowComponent* SubProcess::clone() const {
     SubProcess* copy = new SubProcess(name, mode);
     cloneChildrenInto(*copy);
     return copy;
+}
+Stage::RuntimeSnapshot Stage::captureRuntimeSnapshot() const {
+    RuntimeSnapshot snapshot;
+    snapshot.activated = activated;
+    snapshot.cancelledFlag = cancelledFlag;
+    snapshot.finishedNotified = finishedNotified;
+    snapshot.cursor = cursor;
+    snapshot.cursorActivated = cursorActivated;
+    return snapshot;
+}
+
+void Stage::restoreRuntimeSnapshot(const RuntimeSnapshot& snapshot) {
+    if (snapshot.cursor > children.size())
+        throw std::invalid_argument("Stage memento cursor exceeds child count");
+    activated = snapshot.activated;
+    cancelledFlag = snapshot.cancelledFlag;
+    finishedNotified = snapshot.finishedNotified;
+    cursor = snapshot.cursor;
+    cursorActivated = snapshot.cursorActivated;
+    busy = false; // Never restore a transient re-entrancy guard as locked.
 }

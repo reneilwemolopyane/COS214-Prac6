@@ -1,3 +1,3 @@
-#include "WorkflowMediator.h"
+#include "tividy/mediator/WorkflowMediator.h"
 
 WorkflowMediator::~WorkflowMediator(){}

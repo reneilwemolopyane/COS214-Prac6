@@ -11,7 +11,7 @@ class WorkflowCommand;
 /**
  * @brief What happened, where, and why.
  *
- * Pushed to every observer through update(e). @ref source lets an observer
+ * Pushed to every observer through update(e) (Observer push model). @ref source lets an observer
  * reach its instance, and @ref cause gives the IncidentMonitor the command
  * to retry.
  */
@@ -37,4 +37,11 @@ struct WorkflowEvent {
     WorkflowEvent(EventType t, WorkflowInstance* src, const std::string& item = "",
                   WorkflowCommand* c = 0, const std::string& info = "")
         : type(t), workItemId(item), details(info), source(src), cause(c) {}
+
+    EventType getType() const { return type; }
+    const std::string& getInstanceId() const { return instanceId; }
+    const std::string& getWorkItemId() const { return workItemId; }
+    const std::string& getTimestamp() const { return timestamp; }
+    const std::string& getDetails() const { return details; }
+    const std::string& getCommandName() const { return commandName; }
 };

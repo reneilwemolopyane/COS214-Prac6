@@ -1,13 +1,11 @@
-#include "AssignmentStrategy.h"
-#include "WorkItem.h"
-#include "../core/Participant.h"
-
-AssignmentStrategy::~AssignmentStrategy(){}
+#include "tividy/strategy/AssignmentStrategy.h"
+#include "tividy/composite_prototype/WorkItem.h"
+#include "tividy/core/Participant.h"
 
 std::vector<Participant*> AssignmentStrategy::eligible(const WorkItem& item, const std::vector<Participant*>& candidates)const{
     std::vector<Participant*> ok;
     for (size_t i = 0; i < candidates.size(); i++){
-        if (candidates[i]->hasRole(item.getRequiredRole())){
+        if (candidates[i]->hasRole(item.getRole())){
             ok.push_back(candidates[i]);
         }
     }
@@ -15,9 +13,10 @@ std::vector<Participant*> AssignmentStrategy::eligible(const WorkItem& item, con
 }
 
 //Role based Strategy
-Participant* RoleBasedStrategy::selectParticipant(const WorkItem&, const std::vector<Participant*>& candidates){
+Participant* RoleBasedStrategy::selectParticipant(const WorkItem& item, const std::vector<Participant*>& candidates){
     std::vector<Participant*> ok = eligible(item, candidates);
     return ok.empty() ? nullptr : ok[0];
+}
 AssignmentStrategy* RoleBasedStrategy::clone()const{
     return new RoleBasedStrategy(*this);
 }
@@ -26,7 +25,8 @@ std::string RoleBasedStrategy::name()const{
 }
 
 //Shortest Queue Strategy
-Participant* ShortestQueueStrategy::selectParticipant(const WorkItem&, const std::vector<Participant*>&){
+Participant* ShortestQueueStrategy::selectParticipant(const WorkItem& item, const std::vector<Participant*>& candidates){
+    std::vector<Participant*>ok = eligible(item, candidates);
     if (ok.empty()) return nullptr;
     Participant* best = ok[0];
     for (int i = 1; i < (int)ok.size(); i++)
@@ -48,7 +48,7 @@ Participant* RoundRobinStrategy::selectParticipant(const WorkItem& item, const s
     return ok[lastIndex];
 }
 
-AssignmentStrategy* RoundRobinStrategy::clone()clone{
+AssignmentStrategy* RoundRobinStrategy::clone()const{
     return new RoundRobinStrategy(*this);
 }
 std::string RoundRobinStrategy::name()const{

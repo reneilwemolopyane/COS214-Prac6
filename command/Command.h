@@ -14,6 +14,8 @@
 class WorkItem;
 class Participant;
 class ExternalConnector;
+class WorkflowComponent;
+class InstanceCoordinator;
 
 /**
  * @brief Command pattern abstract Command.
@@ -43,6 +45,16 @@ public:
 
     /** @brief Event raised when execute() succeeds. */
     virtual EventType successEvent() const { return EVT_COMPLETED; }
+
+    /**
+     * @brief Whether the CommandProcessor should announce success with successEvent().
+     * False when the receiver already announces the change itself (e.g. a WorkItem
+     * raises COMPLETED), so the audit trail does not list it twice.
+     */
+    virtual bool announcesSuccess() const { return true; }
+
+    /** @brief Extra text for the audit trail when the command succeeds (e.g. an external system's answer). */
+    virtual std::string describe() const { return ""; }
 
     /** @brief Whether the last failure was temporary and worth retrying. */
     virtual bool isRetryable() const { return false; }
@@ -94,14 +106,57 @@ private:
  */
 class CompleteWorkItemCommand : public WorkflowCommand {
 public:
-    CompleteWorkItemCommand(WorkItem* item, const std::string& outcome, const std::string& issuedBy = "system");
+    /** @param front Outermost decorator of the item (or null): the call goes through it so security,
+     *         validation and audit decorators run. */
+    CompleteWorkItemCommand(WorkItem* item, const std::string& outcome, const std::string& issuedBy = "system",
+                            WorkflowComponent* front = 0);
     bool execute();
     /** @brief Reopens the work item. */
     void undo();
     std::string name() const { return "CompleteWorkItem"; }
+    /** @brief The WorkItem raises COMPLETED itself. */
+    bool announcesSuccess() const { return false; }
 private:
     WorkItem* item;        ///< Receiver (not owned).
     std::string outcome;   ///< e.g. "approved".
+    WorkflowComponent* front;   ///< Decorator stack to call through (not owned), or null.
+};
+
+/** @brief ConcreteCommand: starts work on an assigned item. Receiver: WorkItem. */
+class StartWorkItemCommand : public WorkflowCommand {
+public:
+    StartWorkItemCommand(WorkItem* item, const std::string& issuedBy = "system", WorkflowComponent* front = 0);
+    bool execute();
+    void undo() {}                       ///< Starting has nothing to reverse.
+    std::string name() const { return "StartWorkItem"; }
+    bool announcesSuccess() const { return false; }   ///< The item raises STARTED itself.
+private:
+    WorkItem* item; WorkflowComponent* front;
+};
+
+/** @brief ConcreteCommand: rejects an in-progress item with a reason (exception path). Receiver: WorkItem. */
+class RejectWorkItemCommand : public WorkflowCommand {
+public:
+    RejectWorkItemCommand(WorkItem* item, const std::string& reason, const std::string& issuedBy = "system");
+    bool execute();
+    void undo() {}                       ///< A rejection closes the item for good.
+    std::string name() const { return "RejectWorkItem"; }
+    bool announcesSuccess() const { return false; }   ///< The item raises REJECTED itself.
+private:
+    WorkItem* item; std::string reason;
+};
+
+/** @brief ConcreteCommand: nobody responded in time, so move the item up. Receiver: InstanceCoordinator. */
+class EscalateWorkItemCommand : public WorkflowCommand {
+public:
+    EscalateWorkItemCommand(InstanceCoordinator* coordinator, const std::string& itemId, const std::string& reason,
+                            const std::string& issuedBy = "system");
+    bool execute();
+    void undo() {}
+    std::string name() const { return "EscalateWorkItem"; }
+    bool announcesSuccess() const { return false; }   ///< The coordinator records the move itself.
+private:
+    InstanceCoordinator* coordinator; std::string reason;
 };
 
 /**
@@ -128,13 +183,20 @@ public:
     /** @brief Sends the undo operation with the saved reference id. */
     void undo();
     std::string name() const { return "InvokeService"; }
+    /** @brief A service call is not a work item completing. */
+    EventType successEvent() const { return EVT_SERVICE_CALLED; }
     bool isRetryable() const { return retryable; }
     /** @brief Id returned by the external system on success. */
     std::string getReferenceId() const { return referenceId; }
+    /** @brief Everything the external system answered (e.g. "valid" for a lookup). */
+    const ParamMap& getResultData() const { return resultData; }
+    std::string describe() const;
 private:
     ExternalConnector* connector;   ///< Receiver (not owned).
     ConnectorRequest request;       ///< The original call.
     std::string undoOperation;      ///< Operation used to reverse the call.
     std::string referenceId;        ///< Saved for undo.
+    ParamMap resultData;            ///< The last successful answer.
+    std::string resultMessage;
     bool retryable;                 ///< Result of the last failed call.
 };
