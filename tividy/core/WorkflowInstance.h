@@ -18,10 +18,13 @@ public:
     ~WorkflowInstance();
 
     void start();
+    void cancel(); // NEW: Explicitly cancel the tree
     void addDependency(const std::string& prerequisite, const std::string& item);
     void raiseEvent(EventType type, const std::string& workItemId = "",
                     WorkflowCommand* cause = 0, const std::string& message = "");
     void accept(WorkflowVisitor&);
+    
+    // Memento
     InstanceMemento* createMemento() const;
     void restoreFromMemento(const InstanceMemento&);
 

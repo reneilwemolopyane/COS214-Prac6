@@ -105,12 +105,17 @@ void InstanceCoordinator::releaseAvailableItems() {
         if (participant) {
             item->assign(participant);
 
+            // NEW: Pass structured payload
+            DataMap payload;
+            payload["assignee"] = participant->getName();
+            payload["instance"] = events ? events->getState().instanceId : ""; // Best effort
+
             publish(WorkflowEvent(
                 EVT_ASSIGNED,
-                nullptr,
                 item->getId(),
+                payload,
                 nullptr,
-                "assignee: " + participant->getName()
+                events // Source
             ));
         }
     }

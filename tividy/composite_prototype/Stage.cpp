@@ -68,8 +68,22 @@ void Stage::advance() {
                 cursorActivated = true;
                 c->activate();
             }
-            if (!c->isFinished()) return;
-            if (!c->isComplete()) return;
+            
+            if (!c->isFinished()) return; 
+            
+            // NEW: Check for rejection/failure
+            if (!c->isComplete()) {
+                // Cancel the rest of the stage
+                for (std::size_t i = cursor + 1; i < children.size(); ++i) {
+                    if (!children[i]->isFinished()) {
+                        children[i]->cancel();
+                    }
+                }
+                // Notify parent (if this stage has a parent)
+                if (getParent()) getParent()->childFinished(*this);
+                return;
+            }
+            
             ++cursor;
             cursorActivated = false;
         }

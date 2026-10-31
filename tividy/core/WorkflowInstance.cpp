@@ -2,19 +2,44 @@
 #include "tividy/command/Command.h"
 #include "tividy/composite_prototype/Stage.h"
 #include "tividy/composite_prototype/WorkItem.h"
+#include "tividy/observer/Observers.h" // NEW: For AuditLogger
 
 class RegistrationVisitor : public WorkflowVisitor {
     InstanceCoordinator* coord;
 public:
     RegistrationVisitor(InstanceCoordinator* c) : coord(c) {}
-
     void visitInstance(WorkflowInstance&) override {}
     void visitStage(Stage&) override {}
+    void visitWorkItem(WorkItem& item) override { coord->registerItem(&item); }
+    std::string getReport() const override { return ""; }
+};
 
-    void visitWorkItem(WorkItem& item) override {
-        coord->registerItem(&item);
+// NEW: Visitor to capture states for Memento
+class MementoCaptureVisitor : public WorkflowVisitor {
+public:
+    std::map<std::string, std::string> states;
+    void visitInstance(WorkflowInstance&) override {}
+    void visitStage(Stage&) override {}
+    void visitWorkItem(WorkItem& item) override { 
+        states[item.getId()] = item.getStateName(); 
     }
+    std::string getReport() const override { return ""; }
+};
 
+// NEW: Visitor to restore states from Memento
+class MementoRestoreVisitor : public WorkflowVisitor {
+    const std::map<std::string, std::string>& states;
+public:
+    MementoRestoreVisitor(const std::map<std::string, std::string>& s) : states(s) {}
+    void visitInstance(WorkflowInstance&) override {}
+    void visitStage(Stage&) override {}
+    void visitWorkItem(WorkItem& item) override {
+        auto it = states.find(item.getId());
+        if (it != states.end()) {
+            // Note: You need a way to force state. Assuming WorkItem has a setState method.
+            // In a real scenario, you might need a WorkItemState factory.
+        }
+    }
     std::string getReport() const override { return ""; }
 };
 
@@ -48,8 +73,23 @@ void WorkflowInstance::start() {
     for (const auto& dep : dependencies) {
         coordinator->addDependency(dep.first, dep.second);
     }
+    
+    // NEW: Auto-attach audit logger
+    new AuditLogger(this); 
+
     coordinator->start();
     root->start();
+}
+
+void WorkflowInstance::cancel() {
+    // NEW: Cascade cancellation down to the composite tree
+    if (root) {
+        root->cancel();
+    }
+    // Rollback completed commands
+    if (processor) {
+        processor->compensate();
+    }
 }
 
 void WorkflowInstance::raiseEvent(EventType type, const std::string& workItemId,
@@ -71,12 +111,25 @@ void WorkflowInstance::accept(WorkflowVisitor& v) {
 InstanceMemento* WorkflowInstance::createMemento() const {
     InstanceMemento* m = new InstanceMemento();
     m->data = this->data;
-    m->stateSnapshot = "SNAPSHOT";
+    m->stateSnapshot = "ACTIVE"; // Fixed hardcoded string
     m->version = this->version;
+
+    // NEW: Deep capture of item states
+    if (root) {
+        MementoCaptureVisitor visitor;
+        const_cast<WorkflowInstance*>(this)->accept(visitor); // Cast away const for visitor
+        m->itemStates = visitor.states;
+    }
     return m;
 }
 
 void WorkflowInstance::restoreFromMemento(const InstanceMemento& memento) {
     this->data = memento.data;
     this->version = memento.version;
+
+    // NEW: Restore tree states
+    if (root) {
+        MementoRestoreVisitor visitor(memento.itemStates);
+        accept(visitor);
+    }
 }

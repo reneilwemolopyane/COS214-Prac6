@@ -6,6 +6,20 @@
 #include "tividy/command/Command.h"
 #include "tividy/command/CommandProcessor.h"
 
+namespace {
+// NEW: Helper Visitor for ownership validation
+class InstanceItemValidator : public WorkflowVisitor {
+public:
+    WorkItem* target;
+    bool found;
+    InstanceItemValidator(WorkItem* t) : target(t), found(false) {}
+    void visitInstance(WorkflowInstance&) override {}
+    void visitStage(Stage&) override {}
+    void visitWorkItem(WorkItem& i) override { if (&i == target) found = true; }
+    std::string getReport() const override { return ""; }
+};
+}
+
 WorkflowEngine::~WorkflowEngine() {
     for (std::size_t i = 0; i < instances.size(); ++i)
         delete instances[i];
@@ -55,13 +69,32 @@ std::string WorkflowEngine::getStatus(const std::string& instanceId) const {
 
 bool WorkflowEngine::assignWorkItem(WorkflowInstance* instance, WorkItem* item, Participant* who) {
     if (!item) return false;
+    
+    // NEW: Security Check
+    InstanceItemValidator validator(item);
+    instance->accept(validator);
+    if (!validator.found) return false; 
+
     return runCommand(instance, new AssignWorkItemCommand(item, who));
 }
 
 bool WorkflowEngine::completeWorkItem(WorkflowInstance* instance, WorkItem* item, const std::string& outcome) {
     if (!item) return false;
+
+    // NEW: Security Check
+    InstanceItemValidator validator(item);
+    instance->accept(validator);
+    if (!validator.found) return false; 
+
+    // NEW: Invoke approval chain if needed
+    // (This is a placeholder - you need to check if the item is wrapped in an ApprovalDecorator)
+    // if (dynamic_cast<ApprovalDecorator*>(item)) {
+    //     // run approval logic here
+    // }
+
     return runCommand(instance, new CompleteWorkItemCommand(item, outcome));
 }
+
 
 bool WorkflowEngine::invokeService(WorkflowInstance* instance, ExternalConnector* connector,
                                    const ConnectorRequest& request, const std::string& workItemId,

@@ -58,6 +58,10 @@ void CompleteWorkItemCommand::undo() {
     if (!item) return;
     try {
         item->reopen();
+        // NEW: Notify parent to rollback its cursor
+        if (item->getParent()) {
+            item->getParent()->childFinished(*item);
+        }
     } catch (const std::exception& e) {
         error = e.what();
     }

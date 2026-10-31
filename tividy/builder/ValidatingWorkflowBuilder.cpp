@@ -26,25 +26,28 @@ void ValidatingWorkflowBuilder::buildStage(const std::string& name) {
 }
 
 void ValidatingWorkflowBuilder::buildWorkItem(const std::string& name, const std::string& role) {
-
     if (currentStage == nullptr) {
-
         throw std::logic_error("buildStage must be called before buildWorkItem");
     }
-
     if (name.empty()) {
-
         throw std::invalid_argument("Work item name must not be empty");
     }
-
-    if (itemRoles.count(name) != 0){
-
+    if (itemRoles.count(name) != 0) {
         throw std::invalid_argument("Duplicate work item name: " + name);
     }
 
     itemRoles[name] = role;
 
-    appendItem(name, role);
+    // NEW: Wrap the item based on metadata (Example placeholder)
+    WorkItem* item = new WorkItem(name, name);
+    item->setRole(role);
+    
+    // Check if there's a rule like "requires_approval" or "deadline"
+    // If so, wrap it:
+    // item = new ApprovalDecorator(item, chain, amountProvider);
+    // item = new DeadlineDecorator(item, 3600);
+
+    currentStage->add(item);
 }
 
 void ValidatingWorkflowBuilder::buildDependency(const std::string& from, const std::string& to){

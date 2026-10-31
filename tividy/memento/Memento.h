@@ -3,7 +3,7 @@
 
 #include <chrono>
 #include <string>
-
+#include <map> // NEW
 #include "tividy/core/Common.h"
 
 class WorkflowInstance;
@@ -22,11 +22,15 @@ public:
     std::chrono::system_clock::time_point getTimestamp() const;
     std::string getTimestampString() const;
 
+    // NEW: Expose item states for auditing
+    const std::map<std::string, std::string>& getItemStates() const { return itemStates; }
+
 private:
     DataMap data;
     std::string stateSnapshot;
     int version;
     std::chrono::system_clock::time_point timestamp;
+    std::map<std::string, std::string> itemStates; // NEW: ID -> StateName
 };
 
 #endif
