@@ -27,8 +27,7 @@ class InstanceCoordinator : public WorkflowMediator {
 private:
     WorkItem* findItem(const std::string& id) const;
 
-    void closeItem(const std::string& id,
-                   const std::string& reason);
+    void closeItem(const std::string& id,  const std::string& reason);
 
     void handleCompleted(const std::string& id);
     void handleRejection(const std::string& id);
@@ -47,16 +46,13 @@ private:
     bool started;
 
 public:
-    InstanceCoordinator(WorkAssigner* assigner,
-                        WorkflowSubject* events);
+    InstanceCoordinator(WorkAssigner* assigner,  WorkflowSubject* events);
 
     ~InstanceCoordinator() override;
 
-    InstanceCoordinator& operator=(
-        const InstanceCoordinator&) = delete;
+    InstanceCoordinator& operator=(const InstanceCoordinator&) = delete;
 
-    void notify(WorkflowColleague* sender,
-                const WorkflowEvent& event) override;
+    void notify(WorkflowColleague* sender, const WorkflowEvent& event) override;
 
     bool registerItem(WorkItem* item);
 

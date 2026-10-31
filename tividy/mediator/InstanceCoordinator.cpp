@@ -4,8 +4,9 @@
 #include "tividy/composite_prototype/WorkItem.h"
 #include "tividy/observer/Observers.h"
 
+
 InstanceCoordinator::InstanceCoordinator(WorkAssigner* a, WorkflowSubject* s)
-    : assigner(a), events(s), started(false) {
+    : assigner(a), events(s), started(false){
     if (assigner) assigner->setMediator(this);
 }
 
@@ -101,18 +102,20 @@ void InstanceCoordinator::releaseAvailableItems() {
         item->makeAvailable();
 
         Participant* participant = assigner ? assigner->assign(*item, pool) : nullptr;
-
         if (participant) {
-            item->assign(participant);
+          item->assign(participant);
 
-            publish(WorkflowEvent(
-                EVT_ASSIGNED,
-                nullptr,
-                item->getId(),
-                nullptr,
-                "assignee: " + participant->getName()
-            ));
-        }
+           DataMap payload;
+           payload["assignee"] = participant->getName();
+           payload["message"] = "Work item assigned";
+
+        publish(WorkflowEvent(
+        EVT_ASSIGNED,
+        item->getId(),
+        payload
+    ));
+}
+        
     }
 }
 
