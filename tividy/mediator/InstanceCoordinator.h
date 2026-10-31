@@ -46,7 +46,7 @@ private:
     bool started;
 
 public:
-    InstanceCoordinator(WorkAssigner* assigner,  WorkflowSubject* events, WorkflowInstance* instance);
+    InstanceCoordinator(WorkAssigner* assigner,  WorkflowSubject* events);
 
     ~InstanceCoordinator() override;
 
