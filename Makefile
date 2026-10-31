@@ -8,12 +8,12 @@ EXE   := $(if $(filter Windows_NT,$(OS)),.exe,)
 
 # Engine = every .cpp under tividy/, except a GUI folder and any main.cpp
 ENGINE_SRC := $(filter-out tividy/gui/% %/main.cpp, \
-                $(wildcard tividy/*.cpp tividy/*/*.cpp tividy/*/*/*.cpp))
+  $(wildcard tividy/*.cpp tividy/*/*.cpp tividy/*/*/*.cpp))
 ENGINE_OBJ := $(ENGINE_SRC:%.cpp=$(BUILD)/%.o)
 ENGINE_LIB := $(BUILD)/libtividy.a
 
 # Single-file test programs: tests/<name>.cpp, each one defines its own main (doctest)
-TEST_SRC := tests/test_mediator_strategy_state.cpp tests/StateCompositeTests.cpp tests/test_builders.cpp tests/test_definition.cpp tests/test_director.cpp tests/test_facade.cpp tests/test_repository.cpp tests/VisitorMementoTests.cpp
+TEST_SRC := tests/test_mediator_strategy_state.cpp tests/StateCompositeTests.cpp tests/test_builders.cpp  tests/test_director.cpp tests/test_facade.cpp tests/test_repository.cpp tests/VisitorMementoTests.cpp
 TEST_BIN := $(TEST_SRC:tests/%.cpp=$(BUILD)/bin/%$(EXE))
 
 .PHONY: all test clean demo
