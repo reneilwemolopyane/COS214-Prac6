@@ -411,3 +411,23 @@ TEST_CASE("Notifications: participants are told when their work becomes availabl
     for (std::size_t i = 0; i < sent.size(); ++i) if (sent[i].find("Verify policy coverage") != std::string::npos) toClaimsHandler = true;
     CHECK(toClaimsHandler);
 }
+
+TEST_CASE("Cancel after payment works when nobody is acting (as in the TUI): payment reversed, all items closed") {
+    Workspace ws(new InsuranceScenario());
+    Run r(ws, "repair-small");
+    intakeAndChecks(r);
+    REQUIRE(r.work("Review claim and decide", "REPAIR"));
+    for (const char* n : {"Approve settlement amount", "Authorise repair", "Repair vehicle", "Inspect completed repairs", "Release settlement payment"})
+        REQUIRE_MESSAGE(r.work(n), n << ": " << ws.getEngine().getLastError());
+    r.in->setActor(0);                                   // the TUI clears the actor after every action
+    CHECK_NOTHROW(CHECK(ws.getEngine().cancel(r.in->getId())));   // engine acts as system: security decorator must not veto
+    bool paymentReversed = false;                         // the payment call itself was undone
+    const std::vector<WorkflowEvent>& tr = r.in->getAuditLogger()->getTrail();
+    for (std::size_t i = 0; i < tr.size(); ++i)
+        if (tr[i].type == EVT_COMPENSATED && tr[i].commandName == "InvokeService" && tr[i].workItemId.find("Release settlement payment") != std::string::npos) paymentReversed = true;
+    CHECK(paymentReversed);
+    CHECK(r.outcome() == "CANCELLED");
+    CHECK(ws.getEngine().getStatus(r.in->getId()) == "CANCELLED");
+    CHECK(r.state("Release settlement payment") == "Cancelled");
+    CHECK(r.state("Close claim") == "Cancelled");
+}
