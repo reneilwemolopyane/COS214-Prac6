@@ -1,0 +1,23 @@
+/**
+ * @mainpage TIVIDY Workflow Engine
+ *
+ * TIVIDY is a modular C++ workflow engine demonstrating workflow construction
+ * and execution, state management, approvals, adapters, decorators, and
+ * related design patterns. The `scenarios` module provides sample insurance
+ * and education workflows, while `tui` contains the interactive text
+ * interface.
+ *
+ * @section building Building
+ * Configure and build the project with CMake:
+ * @code
+ * cmake -S . -B build
+ * cmake --build build
+ * @endcode
+ *
+ * @section generating_docs Generating this documentation
+ * From the repository root, run:
+ * @code
+ * doxygen Doxyfile
+ * @endcode
+ * The HTML documentation is written to `docs/api`.
+ */
