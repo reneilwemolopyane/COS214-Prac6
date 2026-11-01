@@ -1,15 +1,38 @@
 name: ci
+
 on:
-  push: { branches: [main] }
+  push:
+    branches: [main, dev]
   pull_request:
+    branches: [main, dev]
+
 jobs:
-  cpp:
+  build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          g++ --version
+          cmake --version
+
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-      - name: Build
-        run: cmake --build build -j
+
+      - name: Build (engine, scenarios, TUI, web server, all test executables)
+        run: cmake --build build -j 2
+
       - name: Test (unit, integration, TUI smoke)
-        run: cd build && ctest --output-on-failure
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Upload test log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ctest-log
+          path: build/Testing/Temporary/LastTest.log
+          if-no-files-found: ignore
