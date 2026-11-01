@@ -142,3 +142,6 @@ target_link_libraries(TividyServer PRIVATE
     tividy_engine
     pthread
 )
+if(WIN32)
+    target_link_libraries(TividyServer PRIVATE ws2_32 wsock32)
+endif()
