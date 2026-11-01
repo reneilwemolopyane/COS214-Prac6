@@ -55,7 +55,7 @@ class InstanceCoordinator : public WorkflowMediator{
        std::map<std::string, long> dueAt;      ///< When an assigned item becomes overdue.
        void armDeadline(const std::string& itemId);
        bool canEscalate(const std::string& itemId) const { return routers.count(itemId) || escalationRoles.count(itemId); }
-       const DataMap* data;                    ///< The instance's data (not owned); read by guards.
+       DataMap* data;                    ///< The instance's data (not owned); read by guards.
        std::vector<Participant*> pool;             
        WorkAssigner* assigner;
        WorkflowSubject* events; 
@@ -79,7 +79,7 @@ class InstanceCoordinator : public WorkflowMediator{
        void addParticipant(Participant* p);
 
        /** @brief Instance data the guards read (not owned; must outlive the coordinator). */
-       void setData(const DataMap* d) { data = d; }
+       void setData(DataMap* d) { data = d; }
        /** @brief Attaches a branch rule (Interpreter text) to an item. @throws std::invalid_argument on bad syntax. */
        void setGuard(const std::string& itemId, const std::string& rule);
        /** @brief Routes the item's approval through a Chain of Responsibility built from @p levels. */

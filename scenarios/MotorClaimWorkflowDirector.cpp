@@ -14,6 +14,7 @@ void MotorClaimWorkflowDirector::construct(WorkflowBuilder& builder) {
     builder.buildWorkItem("Collect claim documents", "Policyholder");
 
     builder.buildStage("Assessment and investigation");
+    builder.buildStageMode(PARALLEL); 
     builder.buildWorkItem("Verify police report", "Claims Handler");
     builder.buildWorkItem("Assess vehicle damage", "Assessor");
     builder.buildWorkItem("Obtain repair estimate", "Panel Beater");
@@ -21,6 +22,7 @@ void MotorClaimWorkflowDirector::construct(WorkflowBuilder& builder) {
     builder.buildWorkItem("Fraud investigation", "Fraud Investigator");
 
     builder.buildStage("Decision and settlement");
+    //builder.buildStageMode(SEQUENTIAL);
     builder.buildWorkItem("Review claim and decide", "Claims Handler");
     builder.buildWorkItem("Approve settlement amount", "Claims Manager");
     builder.buildWorkItem("Authorise write-off payout", "Claims Handler");
@@ -56,9 +58,9 @@ void MotorClaimWorkflowDirector::construct(WorkflowBuilder& builder) {
     builder.buildDependency("Release settlement payment", "Close claim");
 
     // ---- Routing decisions (Interpreter guards) ----
-    builder.buildGuard("Fraud investigation", "outcome('Screen claim for fraud') == SUSPICIOUS or fraudScore >= 70");
-    builder.buildGuard("Authorise repair", "outcome('Review claim and decide') == REPAIR");
-    builder.buildGuard("Authorise write-off payout", "outcome('Review claim and decide') == WRITE_OFF");
+    builder.buildGuard("Fraud investigation","Screen_claim_for_fraud_outcome == SUSPICIOUS or fraudScore >= 70");
+    builder.buildGuard("Authorise repair","Review_claim_and_decide_outcome == REPAIR");
+    builder.buildGuard("Authorise write-off payout","Review_claim_and_decide_outcome == WRITE_OFF");
 
     // ---- Approval by amount (Chain of Responsibility) ----
     builder.buildApproval("Approve settlement amount", "claimAmount",

@@ -110,6 +110,8 @@ public:
     void raiseEvent(EventType type, const std::string& workItemId = "",
                     WorkflowCommand* cause = 0, const std::string& details = "");
 
+    WorkflowComponent* getRoot() const { return root; }
+
 private:
     std::string id;
     WorkflowComponent* root;
