@@ -124,3 +124,21 @@ set_tests_properties(TuiSmoke_Education_Rejects PROPERTIES PASS_REGULAR_EXPRESSI
 add_test(NAME TuiSmoke_Deadline_Escalates
          COMMAND sh -c "\"$<TARGET_FILE:tividy_tui>\" --no-color < \"${CMAKE_SOURCE_DIR}/tests/tui_smoke.txt\"")
 set_tests_properties(TuiSmoke_Deadline_Escalates PROPERTIES PASS_REGULAR_EXPRESSION "1 item\\(s\\) escalated")
+
+# ===== Tividy Web Server =====
+add_executable(TividyServer
+    api/main_server.cpp
+    api/ApiServer.cpp
+    api/JsonSerializer.cpp
+)
+
+target_include_directories(TividyServer PRIVATE
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/third_party
+)
+
+target_link_libraries(TividyServer PRIVATE 
+    tividy_scenarios
+    tividy_engine
+    pthread
+)

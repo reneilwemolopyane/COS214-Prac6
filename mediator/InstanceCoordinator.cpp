@@ -8,6 +8,7 @@
 #include "tividy/interpreter/Expression.h"
 #include "tividy/chain_of_responsibility/ApprovalRouter.h"
 #include <cstdlib>
+#include <iostream>
 
 namespace {
 /** Lets guards read instance data and the outcomes/states of work items. */
@@ -15,12 +16,19 @@ class CoordinatorContext : public EvaluationContext {
 public:
     CoordinatorContext(const InstanceCoordinator& c, const DataMap* d) : coord(c), data(d) {}
     std::string lookup(const std::string& key) const {
-        if (key.compare(0, 8, "outcome:") == 0) { WorkItem* i = coord.findItem(key.substr(8)); return i ? i->getOutcome() : ""; }
-        if (key.compare(0, 6, "state:") == 0)   { WorkItem* i = coord.findItem(key.substr(6)); return i ? i->getStateName() : ""; }
-        if (!data) return "";
-        DataMap::const_iterator it = data->find(key);
-        return it == data->end() ? std::string() : it->second;
+    if (key.compare(0, 8, "outcome:") == 0) {
+        WorkItem* i = coord.findItem(key.substr(8));
+        std::cerr << "[LOOKUP outcome] '" << key.substr(8) << "' -> '"
+                  << (i ? i->getOutcome() : "<item not found>") << "'\n";
+        return i ? i->getOutcome() : "";
     }
+    if (key.compare(0, 6, "state:") == 0) { WorkItem* i = coord.findItem(key.substr(6)); return i ? i->getStateName() : ""; }
+    if (!data) { std::cerr << "[LOOKUP] data=NULL key='" << key << "'\n"; return ""; }
+    DataMap::const_iterator it = data->find(key);
+    std::string result = it == data->end() ? std::string() : it->second;
+    std::cerr << "[LOOKUP] key='" << key << "' -> '" << result << "'\n";
+    return result;
+}
 private:
     const InstanceCoordinator& coord; const DataMap* data;
 };
@@ -284,7 +292,31 @@ WorkItem* InstanceCoordinator::findItem(const std::string& id)const{
 
 void InstanceCoordinator::handleCompleted(const std::string& id){
     completedItems.insert(id);
-    releaseAvailableItems();                      
+
+    WorkItem* it = findItem(id);
+    if (it && data) {
+        std::string safe;
+        const std::string& raw = it->getId();
+        for (std::size_t i = 0; i < raw.size(); ++i) {
+            char c = raw[i];
+            if (c == ' ')                                                      safe += '_';
+            else if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
+                     || (c >= '0' && c <= '9') || c == '_' || c == '-')        safe += c;
+        }
+
+        std::string outcome = it->getOutcome();
+        std::string normalised;
+        for (std::size_t k = 0; k < outcome.size(); ++k) {
+            char ch = outcome[k];
+            if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') continue;
+            if (ch >= 'a' && ch <= 'z') ch = static_cast<char>(ch - 32);
+            normalised += ch;
+        }
+
+        (*data)[safe + "_outcome"] = normalised;
+    }
+
+    releaseAvailableItems();
 }
 
 void InstanceCoordinator::handleRejection(const std::string& id){
