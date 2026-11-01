@@ -53,10 +53,12 @@ public:
     std::string getData(const std::string& key) const;
     void setData(const std::string& key, const std::string& value) { data[key] = value; }
     const DataMap& getAllData() const { return data; }
-
     /** @brief Who is acting right now. Security decorators and the engine check it. Not owned. */
     void setActor(Participant* who) { actor = who; }
+    /** While true, the engine itself is acting (cancel / compensation): role checks of the security decorator are satisfied. */
+    void setSystemActing(bool on) { systemActing = on; }
     /** @brief Simulated clock (seconds) given to the coordinator; set before start(). */
+
     void setClock(long seconds) { clockSeconds = seconds; if (coordinator) coordinator->setClock(seconds); }
     Participant* getActor() const { return actor; }
 
@@ -130,8 +132,10 @@ private:
     std::map<std::string, ItemConfig> itemConfigs;
     std::map<std::string, WorkflowComponent*> fronts;               ///< item id -> outermost component (not owned).
     std::vector<std::string> decoratorLog;
-    long clockSeconds;
+       long clockSeconds;
     Participant* actor;                                             ///< Not owned.
+    bool systemActing;                                              ///< True during engine-initiated cancel/compensation.
 
     void applyDecorations();
+
 };

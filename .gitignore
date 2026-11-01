@@ -16,6 +16,7 @@ origin/dev
 
 build/
 build-*/
+docs/api/
 node_modules/
 dist/
 .vscode/
