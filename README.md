@@ -6,11 +6,7 @@ demonstrates 17 design patterns: Adapter, Builder, Chain of Responsibility,
 Command, Composite, Decorator, Factory Method, Facade, Interpreter, Mediator,
 Memento, Observer, Prototype, State, Strategy, Template Method, and Visitor.
 
-## Requirements
 
-- C++11-compatible compiler
-- CMake 3.10 or newer
-- Make or another CMake-supported build tool
 
 ## Build and run the TUI
 
