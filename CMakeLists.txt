@@ -1,248 +1,147 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(TividyUnitTests LANGUAGES CXX)
+project(Tividy LANGUAGES CXX)
 
+# The project specification requires C++11.
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 enable_testing()
 
-set(DOCTEST_DIR ${CMAKE_SOURCE_DIR}/third_party/doctest)
+# ===== Shared: make "tividy/<module>/X.h" resolve =====
+# Engine headers are included as "tividy/<module>/X.h" but the repo folders are flat
+# (and the repo isn't named "tividy"), so mirror them into build/include/tividy/.
+set(ENGINE_MODULES core mediator state strategy command observer composite_prototype
+                   visitor adapter builder facade decorator chain_of_responsibility memento interpreter scenarios)
+set(SHIM ${CMAKE_BINARY_DIR}/include)
+set(ENGINE_SRC "")
+foreach(mod ${ENGINE_MODULES})
+    file(GLOB mod_headers ${CMAKE_SOURCE_DIR}/${mod}/*.h)
+    if(mod_headers)
+        file(COPY ${mod_headers} DESTINATION ${SHIM}/tividy/${mod})
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${mod_headers})
+    endif()
+    # Industry-specific code lives in the scenarios library, NOT in the reusable engine.
+    if(NOT mod STREQUAL "scenarios")
+        file(GLOB mod_sources ${CMAKE_SOURCE_DIR}/${mod}/*.cpp)
+        list(APPEND ENGINE_SRC ${mod_sources})
+    endif()
+endforeach()
+file(GLOB SCENARIO_SRC ${CMAKE_SOURCE_DIR}/scenarios/*.cpp)
 
-# ===== Facade / Builder unit tests (isolated with fakes) =====
-add_executable(FacadeBuilderUnitTests
-    tests/test_main.cpp
-    tests/test_builders.cpp
-    tests/test_definition.cpp
-    tests/test_director.cpp
-    tests/test_facade.cpp
-    tests/test_repository.cpp
-
-    tividy/builder/WorkflowBuilder.cpp
-    tividy/builder/WorkflowDefinition.cpp
-    tividy/builder/DraftWorkflowBuilder.cpp
-    tividy/builder/ValidatingWorkflowBuilder.cpp
-    tividy/builder/WorkflowDirector.cpp
-    tividy/facade/DefinitionRepository.cpp
-    tividy/facade/WorkflowFacade.cpp
-)
-
-target_include_directories(FacadeBuilderUnitTests BEFORE PRIVATE
-    ${CMAKE_SOURCE_DIR}/tests/fakes
-)
-
-target_include_directories(FacadeBuilderUnitTests PRIVATE
+# ===== The reusable TIVIDY engine (every module) as one static library =====
+add_library(tividy_engine STATIC ${ENGINE_SRC})
+target_include_directories(tividy_engine PUBLIC
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/tests
-)
+    ${CMAKE_SOURCE_DIR}/core
+    ${SHIM})
 
-add_test(NAME FacadeBuilderUnitTests COMMAND FacadeBuilderUnitTests)
 
-# ===== State + Composite tests =====
-add_executable(StateCompositeTests
-    tests/StateCompositeTests.cpp
-    tividy/composite_prototype/Stage.cpp
-    tividy/composite_prototype/WorkItem.cpp
-    tividy/state/WorkItemState.cpp
-    tividy/state/States.cpp
-    tividy/core/Participant.cpp
-)
+# ===== Industry scenarios (insurance + education): configuration that USES the engine =====
+add_library(tividy_scenarios STATIC ${SCENARIO_SRC})
+target_include_directories(tividy_scenarios PUBLIC ${CMAKE_SOURCE_DIR} ${SHIM})
+target_link_libraries(tividy_scenarios PUBLIC tividy_engine)
 
-target_include_directories(StateCompositeTests PRIVATE
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/tividy
-    ${DOCTEST_DIR}
-)
+# --- Interactive text UI (the main way to run TIVIDY) ---
+add_executable(tividy_tui tui/main.cpp)
+target_link_libraries(tividy_tui tividy_scenarios)
 
+# ===== Unit tests (doctest) =====
+set(DOCTEST_DIR ${CMAKE_SOURCE_DIR}/third_party)
+
+# --- Facade / Builder / Engine tests ---
+file(GLOB FB_TESTS ${CMAKE_SOURCE_DIR}/Facade_BuilderTests/*.cpp)
+add_executable(WorkflowBuilderTests ${FB_TESTS})
+target_include_directories(WorkflowBuilderTests PRIVATE
+    ${CMAKE_SOURCE_DIR}/Facade_BuilderTests ${DOCTEST_DIR}/doctest)
+target_link_libraries(WorkflowBuilderTests tividy_scenarios)
+add_test(NAME WorkflowBuilderTests COMMAND WorkflowBuilderTests)
+
+# --- State and Composite tests ---
+add_executable(StateCompositeTests tests/StateCompositeTests.cpp)
+target_include_directories(StateCompositeTests PRIVATE ${DOCTEST_DIR}/doctest)
+target_link_libraries(StateCompositeTests tividy_engine)
 add_test(NAME StateCompositeTests COMMAND StateCompositeTests)
 
-# ===== Chain of Responsibility + Decorator tests =====
+# --- Chain of Responsibility + Decorator tests ---
 set(CD_TESTS ${CMAKE_SOURCE_DIR}/tests/chain_decorator)
-
 add_executable(ChainDecoratorTests
-    tests/chain_decorator/test_main.cpp
-    tests/chain_decorator/test_approval.cpp
-    tests/chain_decorator/test_decorators.cpp
-    tividy/chain_of_responsibility/ApprovalHandler.cpp
-    tividy/chain_of_responsibility/LevelApprover.cpp
-    tividy/decorator/WorkItemDecorator.cpp
-    tividy/decorator/ValidationDecorator.cpp
-    tividy/decorator/PriorityDecorator.cpp
-    tividy/decorator/SecurityDecorator.cpp
-    tividy/decorator/AuditDecorator.cpp
-    tividy/decorator/NotificationDecorator.cpp
-    tividy/decorator/DeadlineDecorator.cpp
-    tividy/mediator/WorkflowMediator.cpp
-)
-
+    ${CD_TESTS}/test_main.cpp
+    ${CD_TESTS}/test_approval.cpp
+    ${CD_TESTS}/test_decorators.cpp)
 target_include_directories(ChainDecoratorTests PRIVATE
-    ${CD_TESTS}
-    ${CMAKE_SOURCE_DIR}/third_party
-    ${CMAKE_SOURCE_DIR}/tividy/chain_of_responsibility
-    ${CMAKE_SOURCE_DIR}/tividy/decorator
-    ${CMAKE_SOURCE_DIR}
-)
-
+    ${CD_TESTS} ${DOCTEST_DIR}
+    ${CMAKE_SOURCE_DIR}/chain_of_responsibility ${CMAKE_SOURCE_DIR}/decorator)
+target_link_libraries(ChainDecoratorTests tividy_engine)
 add_test(NAME ChainDecoratorTests COMMAND ChainDecoratorTests)
 
-# ===== Integration tests: Facade + Builder + Prototype + Memento =====
-add_executable(IntegrationTests
-    IntegrationTests/main.cpp
-    IntegrationTests/FacadeBuilderPrototypeMementoTests.cpp
-    IntegrationTests/CommandObserverAdapterTests.cpp
+# --- Adapter tests (Adapter pattern: all five connectors) ---
+add_executable(AdapterTests tests/test_adapter.cpp tests/test_main.cpp)
+target_include_directories(AdapterTests PRIVATE ${CMAKE_SOURCE_DIR}/tests)
+target_link_libraries(AdapterTests tividy_engine)
+add_test(NAME AdapterTests COMMAND AdapterTests)
 
-    tividy/builder/WorkflowBuilder.cpp
-    tividy/builder/WorkflowDefinition.cpp
-    tividy/builder/DraftWorkflowBuilder.cpp
-    tividy/builder/ValidatingWorkflowBuilder.cpp
-    tividy/builder/WorkflowDirector.cpp
-    tividy/facade/DefinitionRepository.cpp
-    tividy/facade/WorkflowFacade.cpp
-    tividy/command/Command.cpp
-    tividy/command/CommandProcessor.cpp
-    tividy/command/WorkflowEngine.cpp
-    tividy/core/WorkflowInstance.cpp
-    tividy/core/Participant.cpp
-    tividy/composite_prototype/Stage.cpp
-    tividy/composite_prototype/WorkItem.cpp
-    tividy/state/WorkItemState.cpp
-    tividy/state/States.cpp
-    tividy/mediator/WorkflowMediator.cpp
-    tividy/mediator/InstanceCoordinator.cpp
-    tividy/strategy/AssignmentStrategy.cpp
-    tividy/strategy/WorkAssigner.cpp
-    tividy/observer/ObserverPattern.cpp
-    tividy/observer/Observers.cpp
-    tividy/memento/Memento.cpp
-    tividy/memento/ProcessDataStore.cpp
-    tividy/adapter/MessageAPI.cpp
-    tividy/adapter/MessageAdapter.cpp
-    tividy/adapter/PaymentAPI.cpp
-    tividy/adapter/PaymentAdapter.cpp
+# --- Mediator, Strategy and Observer tests ---
+add_executable(MediatorStrategyTests tests/MediatorStrategyTests.cpp tests/test_main.cpp)
+target_include_directories(MediatorStrategyTests PRIVATE ${CMAKE_SOURCE_DIR}/tests)
+target_link_libraries(MediatorStrategyTests tividy_engine)
+add_test(NAME MediatorStrategyTests COMMAND MediatorStrategyTests)
+
+# --- Visitor and Memento tests ---
+# Uses the same doctest framework as the other test suites.
+add_executable(VisitorMementoTests tests/VisitorMementoTests.cpp)
+target_include_directories(VisitorMementoTests PRIVATE ${DOCTEST_DIR}/doctest)
+target_link_libraries(VisitorMementoTests tividy_engine)
+add_test(NAME VisitorMementoTests COMMAND VisitorMementoTests)
+
+# --- Observer, concrete observers and engine wiring (end to end) ---
+add_executable(ObserverEngineTests tests/ObserverEngineTests.cpp tests/test_main.cpp)
+target_include_directories(ObserverEngineTests PRIVATE ${CMAKE_SOURCE_DIR}/tests)
+target_link_libraries(ObserverEngineTests tividy_engine)
+add_test(NAME ObserverEngineTests COMMAND ObserverEngineTests)
+
+# --- Both industries end to end on the real engine (Interpreter, approval chain, decorators, adapters) ---
+add_executable(ScenarioIntegrationTests tests/ScenarioIntegrationTests.cpp tests/test_main.cpp)
+target_include_directories(ScenarioIntegrationTests PRIVATE ${CMAKE_SOURCE_DIR}/tests)
+target_link_libraries(ScenarioIntegrationTests tividy_scenarios)
+add_test(NAME ScenarioIntegrationTests COMMAND ScenarioIntegrationTests)
+
+add_executable(InterpreterTests tests/InterpreterTests.cpp tests/test_main.cpp)
+target_include_directories(InterpreterTests PRIVATE ${CMAKE_SOURCE_DIR}/tests)
+target_link_libraries(InterpreterTests tividy_engine)
+add_test(NAME InterpreterTests COMMAND InterpreterTests)
+
+# --- The interactive TUI driven by a recorded keyboard session (both industries, exception paths) ---
+add_test(NAME TuiSmoke_Insurance_Completes
+         COMMAND sh -c "\"$<TARGET_FILE:tividy_tui>\" --no-color < \"${CMAKE_SOURCE_DIR}/tests/tui_smoke.txt\"")
+set_tests_properties(TuiSmoke_Insurance_Completes PROPERTIES PASS_REGULAR_EXPRESSION "Insurance \\| motor-claim-1  \\[COMPLETED\\]")
+
+add_test(NAME TuiSmoke_Education_Rejects
+         COMMAND sh -c "\"$<TARGET_FILE:tividy_tui>\" --no-color < \"${CMAKE_SOURCE_DIR}/tests/tui_smoke.txt\"")
+set_tests_properties(TuiSmoke_Education_Rejects PROPERTIES PASS_REGULAR_EXPRESSION "Education \\| bursary-application-1  \\[REJECTED\\]")
+
+add_test(NAME TuiSmoke_Deadline_Escalates
+         COMMAND sh -c "\"$<TARGET_FILE:tividy_tui>\" --no-color < \"${CMAKE_SOURCE_DIR}/tests/tui_smoke.txt\"")
+set_tests_properties(TuiSmoke_Deadline_Escalates PROPERTIES PASS_REGULAR_EXPRESSION "1 item\\(s\\) escalated")
+
+# ===== Tividy Web Server =====
+add_executable(TividyServer
+    api/main_server.cpp
+    api/ApiServer.cpp
+    api/JsonSerializer.cpp
 )
 
-target_include_directories(IntegrationTests PRIVATE
+target_include_directories(TividyServer PRIVATE
     ${CMAKE_SOURCE_DIR}
-    ${DOCTEST_DIR}
-)
-
-add_test(NAME IntegrationTests COMMAND IntegrationTests)
-
-# ===== Pattern integration tests (Composite + Decorator + Chain + Visitor) =====
-add_executable(PatternIntegrationTests
-    tests/chain_decorator/test_main.cpp          # reuses the doctest main
-    tests/integration/test_pattern_integration.cpp
-
-    # Composite + State
-    tividy/composite_prototype/Stage.cpp
-    tividy/composite_prototype/WorkItem.cpp
-    tividy/state/WorkItemState.cpp
-    tividy/state/States.cpp
-    tividy/core/Participant.cpp
-    tividy/mediator/WorkflowMediator.cpp
-
-    # Chain of Responsibility
-    tividy/chain_of_responsibility/ApprovalHandler.cpp
-    tividy/chain_of_responsibility/LevelApprover.cpp
-
-    # Decorator
-    tividy/decorator/WorkItemDecorator.cpp
-    tividy/decorator/ValidationDecorator.cpp
-    tividy/decorator/PriorityDecorator.cpp
-    tividy/decorator/SecurityDecorator.cpp
-    tividy/decorator/AuditDecorator.cpp
-    tividy/decorator/NotificationDecorator.cpp
-    tividy/decorator/DeadlineDecorator.cpp
-    tividy/decorator/ApprovalDecorator.cpp
-
-    # Visitor
-    tividy/visitor/BottleneckVisitor.cpp
-    tividy/memento/ProcessDataStore.cpp
-    tividy/memento/Memento.cpp
-)
-
-target_include_directories(PatternIntegrationTests PRIVATE
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/tividy
     ${CMAKE_SOURCE_DIR}/third_party
-    ${DOCTEST_DIR}
 )
 
-add_test(NAME PatternIntegrationTests COMMAND PatternIntegrationTests)
-
-# ===== Command + Observer tests =====
-add_subdirectory(tests/command_observer)
-
-# ===== Mediator + Strategy + State tests =====
-add_executable(MediatorStrategyStateTests
-    tests/test_mediator_strategy_state.cpp
-    tividy/mediator/InstanceCoordinator.cpp
-    tividy/mediator/WorkflowMediator.cpp
-    tividy/strategy/AssignmentStrategy.cpp
-    tividy/strategy/WorkAssigner.cpp
-    tividy/composite_prototype/WorkItem.cpp
-    tividy/composite_prototype/Stage.cpp
-    tividy/state/WorkItemState.cpp
-    tividy/state/States.cpp
-    tividy/core/Participant.cpp
-    tividy/observer/ObserverPattern.cpp 
-
-
+target_link_libraries(TividyServer PRIVATE 
+    tividy_scenarios
+    tividy_engine
+    pthread
 )
-target_include_directories(MediatorStrategyStateTests PRIVATE
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/tividy
-    ${DOCTEST_DIR}
-)
-add_test(NAME MediatorStrategyStateTests COMMAND MediatorStrategyStateTests)
-
-add_executable(AllPatternsIntegrationTests
-    IntegrationTests/main.cpp
-    IntegrationTests/AllPatternsIntegrationTests.cpp
-
-    tividy/builder/WorkflowBuilder.cpp
-    tividy/builder/WorkflowDefinition.cpp
-    tividy/builder/DraftWorkflowBuilder.cpp
-    tividy/builder/ValidatingWorkflowBuilder.cpp
-    tividy/builder/WorkflowDirector.cpp
-    tividy/facade/DefinitionRepository.cpp
-    tividy/facade/WorkflowFacade.cpp
-    tividy/command/Command.cpp
-    tividy/command/CommandProcessor.cpp
-    tividy/command/WorkflowEngine.cpp
-    tividy/core/WorkflowInstance.cpp
-    tividy/core/Participant.cpp
-    tividy/composite_prototype/Stage.cpp
-    tividy/composite_prototype/WorkItem.cpp
-    tividy/state/WorkItemState.cpp
-    tividy/state/States.cpp
-    tividy/mediator/WorkflowMediator.cpp
-    tividy/mediator/InstanceCoordinator.cpp
-    tividy/strategy/AssignmentStrategy.cpp
-    tividy/strategy/WorkAssigner.cpp
-    tividy/observer/ObserverPattern.cpp
-    tividy/observer/Observers.cpp
-    tividy/memento/Memento.cpp
-    tividy/memento/ProcessDataStore.cpp
-    tividy/adapter/PaymentAPI.cpp
-    tividy/adapter/PaymentAdapter.cpp
-    tividy/decorator/WorkItemDecorator.cpp
-    tividy/decorator/ValidationDecorator.cpp
-    tividy/decorator/PriorityDecorator.cpp
-    tividy/decorator/SecurityDecorator.cpp
-    tividy/decorator/AuditDecorator.cpp
-    tividy/decorator/NotificationDecorator.cpp
-    tividy/decorator/DeadlineDecorator.cpp
-    tividy/decorator/ApprovalDecorator.cpp
-    tividy/chain_of_responsibility/ApprovalHandler.cpp
-    tividy/chain_of_responsibility/LevelApprover.cpp
-    tividy/visitor/BottleneckVisitor.cpp
-)
-
-target_include_directories(AllPatternsIntegrationTests PRIVATE
-    ${CMAKE_SOURCE_DIR}
-    ${DOCTEST_DIR}
-)
-
-add_test(NAME AllPatternsIntegrationTests COMMAND AllPatternsIntegrationTests)
+if(WIN32)
+    target_link_libraries(TividyServer PRIVATE ws2_32 wsock32)
+endif()

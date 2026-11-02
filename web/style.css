@@ -1,0 +1,48 @@
+/* Only keep what Tailwind utilities cannot express cleanly. */
+
+.sidebar-link:hover {
+    background: #F8FAFC;
+    color: #0F172A;
+}
+
+/* Brand button focus ring */
+button:focus-visible {
+    outline: 2px solid #FF6B00;
+    outline-offset: 2px;
+}
+
+/* Table row hover */
+tr.hover-row:hover {
+    background: #F8FAFC;
+}
+
+/* Remove number input spinners in the data override row */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Tab buttons */
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748B;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: color 0.15s;
+}
+.tab-btn:hover  { color: #0F172A; }
+.tab-btn.active { color: #FF6B00; border-bottom-color: #FF6B00; }
+
+/* Selected tree item */
+.tree-item.selected {
+    background: #FFF4ED;
+    border-left: 3px solid #FF6B00;
+}

@@ -1,0 +1,102 @@
+#ifndef WORKFLOWDEFINITION_H
+#define WORKFLOWDEFINITION_H
+
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
+#include <map>
+#include "tividy/core/Common.h"
+#include "tividy/core/ItemConfig.h"
+#include "tividy/composite_prototype/WorkflowComponent.h"
+#include "tividy/core/WorkflowInstance.h"
+
+class WorkflowInstance;
+class WorkflowComponent;
+/**
+ * @file WorkflowDefinition.h
+ * @brief The reusable template of a process.
+ *
+ * GoF roles: Product (Builder) and Client (Prototype).
+ *
+ * A definition owns a template tree of WorkflowComponent objects. It never runs;
+ * createInstance() deep-copies the template so every WorkflowInstance owns its
+ * own independent structure.
+ */
+class WorkflowDefinition {
+public:
+
+    ~WorkflowDefinition();
+    /**
+     * @brief Create an empty, not-yet-validated definition.
+     * @param id      Unique identifier, e.g. "motor-claim".
+     * @param version Definition version number.
+     */
+    WorkflowDefinition(const std::string& id, int version);
+
+    /**
+     * @brief Create a new, independent instance by cloning the template (Prototype).
+     * @param data Data payload for the new instance.
+     * @return The new instance; the caller owns it.
+     * @throws std::logic_error if the definition has no structure yet.
+     */
+    WorkflowInstance* createInstance(const DataMap& data);
+
+    /// @return The definition id.
+    std::string getId() const;
+    /// @return The definition version.
+    int getVersion() const;
+    /// @return true only if a validating builder produced this definition.
+    bool isValidated() const;
+
+    /// Take ownership of the template root (called by builders).
+    void setRoot(WorkflowComponent* root);
+    /// Mark the definition as validated (called by the validating builder).
+    void markValidated();
+
+    /// @return The template root (read only), or nullptr if none.
+    const WorkflowComponent* getRoot() const;
+
+    /// Record that @p to may only start after @p from has finished.
+    void addDependency(const std::string& from, const std::string& to);
+    /// @return All recorded (from, to) dependencies.
+    const std::vector<std::pair<std::string, std::string> >& getDependencies() const;
+
+    /// Attach a routing/approval rule.
+    void addRule(const std::string& name, const std::string& value);
+    /// @return All attached rules.
+    
+    const DataMap& getRules() const;
+
+    /// Per-item configuration (guard, approval chain, decorators, service binding...). Created on first use.
+    ItemConfig& itemConfig(const std::string& itemName);
+    /// @return every item's configuration, copied into each new instance.
+    const std::map<std::string, ItemConfig>& getItemConfigs() const;
+    /// Ordering implied by SEQUENTIAL stages (Composite): (earlier item, later item) pairs.
+    std::vector<std::pair<std::string, std::string> > getImpliedDependencies() const;
+
+private:
+
+    std::string id;
+
+    int version;
+
+    bool validated;
+
+    WorkflowComponent* root;
+
+    std::vector<std::pair<std::string, std::string> > dependencies;
+
+    DataMap rules;
+
+    std::map<std::string, ItemConfig> itemConfigs;
+
+    int instanceCounter;
+
+    WorkflowDefinition(const WorkflowDefinition&) = delete;
+
+    WorkflowDefinition& operator=(const WorkflowDefinition&) = delete;
+};
+
+#endif
