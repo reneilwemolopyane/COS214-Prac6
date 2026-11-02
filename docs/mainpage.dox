@@ -5,7 +5,524 @@
  * and execution, state management, approvals, adapters, decorators, and
  * related design patterns. The `scenarios` module provides sample insurance
  * and education workflows, while `tui` contains the interactive text
- * interface.
+ * interface. The sections below describe the design patterns used in the
+ * implementation, their participants, and how they collaborate.
+ *
+ * @section adapter_pattern 1. Adapter
+ *
+ * @subsection adapter_problem Design problem
+ * Workflow definitions can request services such as payments, record lookups,
+ * document storage, messaging, and scheduling. The workflow engine should not
+ * depend on each service's different API or request format.
+ *
+ * @subsection adapter_participants Participants
+ * - **Target:** `ExternalConnector`, the generic interface expected by the engine.
+ * - **Adapter:** concrete connectors such as `PaymentAdapter` and
+ *   `RecordLookupAdapter`.
+ * - **Adaptee:** service APIs such as `PaymentAPI` and `RecordLookupAPI`.
+ * - **Client:** `WorkflowEngine`, which uses the `ConnectorRegistry` to find a
+ *   connector by name.
+ *
+ * @subsection adapter_collaboration Collaboration
+ * The engine resolves a connector name from the item configuration, creates a
+ * generic `ConnectorRequest`, and calls `ExternalConnector::execute()`. The
+ * concrete adapter translates the request into adaptee-specific calls and
+ * translates the result to `ConnectorResult`. The engine handles the common
+ * result without knowing the service's API.
+ *
+ * @subsection adapter_variation What varies
+ * Each concrete adapter varies in how it maps generic operations and
+ * parameters to its external service. New integrations can implement the
+ * target interface without changing workflow execution code.
+ *
+ * @subsection adapter_fit Why it fits
+ * The adapters isolate service-specific APIs behind a stable target
+ * interface. The registry also lets definitions select connectors by
+ * configuration rather than hard-coding service classes in the engine.
+ *
+ * @section builder_pattern 2. Builder
+ *
+ * @subsection builder_problem Design problem
+ * Workflow definitions contain a tree of stages and work items, along with
+ * dependencies, rules, and per-item options. Constructing that structure
+ * directly in client code would mix definition details with construction
+ * order and validation.
+ *
+ * @subsection builder_participants Participants
+ * - **Product:** `WorkflowDefinition`.
+ * - **Builder:** `WorkflowBuilder`.
+ * - **Concrete builders:** `ValidatingWorkflowBuilder` and
+ *   `DraftWorkflowBuilder`.
+ * - **Director:** `WorkflowDirector` and scenario-specific directors.
+ * - **Client:** scenario setup code that selects a builder and director.
+ *
+ * @subsection builder_collaboration Collaboration
+ * A director calls the builder's construction operations in the required
+ * order. A concrete builder adds stages, items, dependencies, and
+ * configuration to a `WorkflowDefinition`. The validating builder checks the
+ * result before handing it to the client; the draft builder permits incomplete
+ * definitions. `getResult()` returns the product and resets the builder.
+ *
+ * @subsection builder_variation What varies
+ * The director varies by workflow scenario, while the concrete builder
+ * determines whether incomplete definitions are accepted. The same
+ * construction interface can be driven by either builder.
+ *
+ * @subsection builder_fit Why it fits
+ * Construction steps are separated from workflow descriptions and from
+ * definition validation. New scenarios can define their own construction
+ * sequence without putting that sequence in the engine.
+ *
+ * @section chain_pattern 3. Chain of Responsibility
+ *
+ * @subsection chain_problem Design problem
+ * An approval request may require different authority levels depending on
+ * its amount. The engine should not contain a fixed set of role-specific
+ * conditionals, and approval levels should be configurable.
+ *
+ * @subsection chain_participants Participants
+ * - **Handler:** `ApprovalHandler`.
+ * - **Concrete handler:** `LevelApprover`.
+ * - **Client/router:** `ApprovalRouter`, which parses configured levels,
+ *   links handlers, and sends requests into the chain.
+ * - **Request:** `ApprovalRequest`, containing the amount and decision details.
+ *
+ * @subsection chain_collaboration Collaboration
+ * The router builds an ordered chain from configuration such as
+ * `Claims Handler=20000;Claims Manager=100000;Senior Manager=*`. Each handler
+ * decides if it has authority for the amount. If not, it passes the request to
+ * its successor. A timed-out level can route the request onward, and the
+ * escalation trail can be recorded.
+ *
+ * @subsection chain_variation What varies
+ * The chain's levels, limits, and decision callbacks vary by workflow
+ * configuration. The request handling algorithm remains shared.
+ *
+ * @subsection chain_fit Why it fits
+ * Each approval level handles only requests within its authority and forwards
+ * others, keeping the engine independent of the number and names of levels.
+ *
+ * @section command_pattern 4. Command
+ *
+ * @subsection command_problem Design problem
+ * Workflow actions need consistent execution history, retry handling, events,
+ * and compensation. Calling operations directly from the UI or engine would
+ * couple callers to action details and make those concerns difficult to
+ * centralize.
+ *
+ * @subsection command_participants Participants
+ * - **Command:** `WorkflowCommand`, with `execute()` and `undo()`.
+ * - **Concrete commands:** for example, `AssignWorkItemCommand`,
+ *   `CompleteWorkItemCommand`, and `InvokeServiceCommand`.
+ * - **Invoker:** `CommandProcessor`, which records and executes commands.
+ * - **Receivers:** workflow objects or connectors that perform the requested
+ *   work.
+ * - **Client:** `WorkflowEngine`, which creates the appropriate command.
+ *
+ * @subsection command_collaboration Collaboration
+ * The engine creates a command for an action and asks the instance's
+ * processor to run it. The command operates on its receiver, while the
+ * processor tracks status and attempts, reports events, retries eligible
+ * failures, and compensates completed commands in reverse order when needed.
+ *
+ * @subsection command_variation What varies
+ * Each concrete command defines a particular action and its available undo or
+ * compensation behavior. Retryability is also specific to the command result.
+ *
+ * @subsection command_fit Why it fits
+ * Actions are represented as objects, allowing the processor to apply common
+ * history and failure policies without knowing each command's implementation.
+ * Compensation is command-specific and is distinct from restoring a workflow
+ * snapshot with Memento.
+ *
+ * @section composite_pattern 5. Composite
+ *
+ * @subsection composite_problem Design problem
+ * A workflow contains both individual work items and nested groups. Clients
+ * need to build, inspect, clone, and execute the hierarchy without treating
+ * every group and leaf as unrelated types.
+ *
+ * @subsection composite_participants Participants
+ * - **Component:** `WorkflowComponent`.
+ * - **Composite:** `Stage` and its `SubProcess` specialization.
+ * - **Leaf:** `WorkItem`.
+ * - **Client:** workflow definitions, instances, and execution services.
+ *
+ * @subsection composite_collaboration Collaboration
+ * A stage owns child components and implements common component operations
+ * across its subtree. It activates children sequentially or in parallel,
+ * coordinates child completion, and recursively collects items and ordering
+ * constraints. A work item implements the same interface as a leaf.
+ *
+ * @subsection composite_variation What varies
+ * The hierarchy and each stage's execution mode vary by workflow definition.
+ * Nested stages can combine different modes.
+ *
+ * @subsection composite_fit Why it fits
+ * The common component interface lets clients work with a stage or item
+ * polymorphically, while the tree supports nested workflows and shared
+ * operations over their children.
+ *
+ * @section decorator_pattern 6. Decorator
+ *
+ * @subsection decorator_problem Design problem
+ * Work items can require different combinations of security checks,
+ * validation, auditing, notifications, priorities, and deadlines. Creating a
+ * subclass for every possible combination would cause a combinatorial
+ * explosion.
+ *
+ * @subsection decorator_participants Participants
+ * - **Component:** `WorkflowComponent`.
+ * - **Concrete component:** `WorkItem`.
+ * - **Decorator base:** `WorkItemDecorator`, which wraps another component.
+ * - **Concrete decorators:** `SecurityDecorator`, `ValidationDecorator`,
+ *   `AuditDecorator`, `NotificationDecorator`, `PriorityDecorator`, and
+ *   `DeadlineDecorator`.
+ * - **Client/configuration:** `DecoratorFactory` and the workflow instance.
+ *
+ * @subsection decorator_collaboration Collaboration
+ * The factory constructs a wrapper stack around a work item. Calls enter via
+ * the outermost component; each decorator can perform its behavior before or
+ * after forwarding to the wrapped component. The component interface keeps
+ * the decorated item usable wherever a workflow component is expected.
+ *
+ * @subsection decorator_variation What varies
+ * The selected decorators, their ordering, and their configuration vary per
+ * item. Each decorator adds a focused behavior.
+ *
+ * @subsection decorator_fit Why it fits
+ * Behavior can be composed at runtime without changing `WorkItem` or making
+ * subclasses for every feature combination. The outermost wrapper also
+ * ensures commands pass through the configured checks.
+ *
+ * @section factory_method_pattern 7. Factory Method
+ *
+ * @subsection factory_method_problem Design problem
+ * User interfaces need to offer multiple workflow scenarios without directly
+ * depending on each scenario's concrete class.
+ *
+ * @subsection factory_method_participants Participants
+ * - **Creator/factory:** `ScenarioCatalog`.
+ * - **Concrete products:** scenario implementations such as
+ *   `InsuranceScenario` and `EducationScenario`.
+ * - **Client:** the TUI or API that requests a scenario by its identifier.
+ *
+ * @subsection factory_method_collaboration Collaboration
+ * A client requests a scenario by ID. `ScenarioCatalog` selects the matching
+ * factory function and returns a newly created scenario through the common
+ * `Scenario` interface. Unknown IDs produce no scenario.
+ *
+ * @subsection factory_method_variation What varies
+ * The available scenario IDs and their corresponding creation functions vary
+ * as new workflow industries are added.
+ *
+ * @subsection factory_method_fit Why it fits
+ * Callers depend on the scenario interface and catalog rather than selecting
+ * concrete scenario constructors themselves. Adding a scenario is localized
+ * to the catalog's available products and factories.
+ *
+ * @section facade_pattern 8. Facade
+ *
+ * @subsection facade_problem Design problem
+ * Starting and tracking a workflow involves locating a definition, creating
+ * an instance, registering it with the engine, and managing participants.
+ * Exposing that subsystem coordination to every UI or client would create
+ * unnecessary coupling.
+ *
+ * @subsection facade_participants Participants
+ * - **Facade:** `WorkflowFacade`.
+ * - **Subsystem classes:** `DefinitionRepository`, `WorkflowDefinition`,
+ *   `WorkflowInstance`, and `WorkflowEngine`.
+ * - **Clients:** the TUI, API, tests, and other callers.
+ *
+ * @subsection facade_collaboration Collaboration
+ * A client registers definitions and participants through the facade, then
+ * asks it to start a workflow or retrieve an instance's status. The facade
+ * coordinates repository and engine operations and returns a simple result
+ * without taking over their underlying responsibilities.
+ *
+ * @subsection facade_variation What varies
+ * Clients and workflow definitions vary, while the facade presents a stable
+ * entry point for common workflow lifecycle operations.
+ *
+ * @subsection facade_fit Why it fits
+ * The facade reduces the amount of subsystem knowledge required by callers.
+ * It delegates execution and storage behavior to the engine and repository.
+ *
+ * @section interpreter_pattern 9. Interpreter
+ *
+ * @subsection interpreter_problem Design problem
+ * Workflow routing conditions should be configurable as data instead of
+ * requiring new conditional code in the engine for each workflow.
+ *
+ * @subsection interpreter_participants Participants
+ * - **Abstract expression:** `Expression`.
+ * - **Terminal expression:** `ComparisonExpression`.
+ * - **Nonterminal expressions:** `AndExpression`, `OrExpression`, and
+ *   `NotExpression`.
+ * - **Context:** `EvaluationContext`.
+ * - **Client/parser:** `ExpressionParser`; `InstanceCoordinator` evaluates
+ *   configured guards.
+ *
+ * @subsection interpreter_collaboration Collaboration
+ * The parser converts rule text into an expression tree. At runtime, the
+ * coordinator evaluates that tree against the instance's data context. The
+ * expression tree's operations recursively evaluate comparisons and logical
+ * operators to decide whether a guarded work-item branch proceeds.
+ *
+ * @subsection interpreter_variation What varies
+ * The rule text and values in the evaluation context vary per workflow and
+ * instance; the expression grammar and evaluator are shared.
+ *
+ * @subsection interpreter_fit Why it fits
+ * Rules can be changed through workflow configuration without embedding each
+ * routing condition as a separate engine code path.
+ *
+ * @section mediator_pattern 10. Mediator
+ *
+ * @subsection mediator_problem Design problem
+ * Work items, participants, assignment, dependency tracking, and event
+ * handling interact during execution. Direct links among all these objects
+ * would make them tightly coupled.
+ *
+ * @subsection mediator_participants Participants
+ * - **Mediator:** `WorkflowMediator`.
+ * - **Concrete mediator:** `InstanceCoordinator`.
+ * - **Colleagues:** `WorkflowColleague` instances, including work items and
+ *   the assignment components.
+ * - **Client/owner:** `WorkflowInstance`, which connects the instance's
+ *   collaborators.
+ *
+ * @subsection mediator_collaboration Collaboration
+ * Colleagues report workflow events to the coordinator rather than calling
+ * each other directly. The coordinator interprets events, updates dependency
+ * state, releases newly available work, routes approvals or escalations, and
+ * publishes instance events.
+ *
+ * @subsection mediator_variation What varies
+ * Dependency graphs, participants, guard rules, and approval routing vary by
+ * instance. The coordination policy is centralized in the coordinator.
+ *
+ * @subsection mediator_fit Why it fits
+ * Central coordination reduces direct dependencies between workflow
+ * colleagues and gives instance-level progress a single place to be managed.
+ *
+ * @section memento_pattern 11. Memento
+ *
+ * @subsection memento_problem Design problem
+ * A running workflow needs checkpoints so it can roll back to an earlier
+ * execution state without exposing its private fields to the checkpoint
+ * manager. The implementation uses snapshots for in-memory undo; it does not
+ * persist checkpoints across process restarts or replace the separate audit
+ * event trail.
+ *
+ * @subsection memento_participants Participants
+ * - **Originator:** `WorkflowInstance`, which creates and restores snapshots.
+ * - **Memento:** `InstanceMemento`, which keeps captured state private and
+ *   exposes read-only accessors for its public data.
+ * - **Caretaker:** `ProcessDataStore`, which owns appended checkpoints, returns
+ *   the newest checkpoint from `undo()`, and can archive older entries when
+ *   its threshold is exceeded.
+ *
+ * @subsection memento_collaboration Collaboration
+ * The TUI or API creates a checkpoint before an eligible work-item action by
+ * calling `WorkflowInstance::createMemento()` and appending the result to that
+ * instance's `ProcessDataStore`. A snapshot captures the instance data and
+ * version, each work item's state, data, outcome, and failure reason, and
+ * each stage's runtime flags and execution cursor. It also records a timestamp
+ * and a readable summary of work-item states.
+ *
+ * To undo, the caretaker returns the latest checkpoint and the caller passes
+ * it to `WorkflowInstance::restoreFromMemento()`. The instance restores its
+ * data, work items, stage progress, and eligible assignees. It reports an
+ * error if the saved item or stage structure does not match the current
+ * workflow. The caller then releases the returned memento.
+ *
+ * @subsection memento_variation What varies
+ * The captured values vary with the particular workflow instance and its
+ * current items and stages. The snapshot structure itself is defined by
+ * `InstanceMemento`, `WorkItemMemento`, and `StageMemento`.
+ *
+ * @subsection memento_fit Why it fits
+ * `WorkflowInstance` alone accesses and restores its private execution state;
+ * `ProcessDataStore` manages checkpoint history without directly manipulating
+ * that state. This supports an explicit one-step rollback in the running
+ * application while keeping checkpoint ownership separate from the
+ * originator. The store is in memory, so durable crash recovery is not
+ * provided by this implementation.
+ *
+ * @section observer_pattern 12. Observer
+ *
+ * @subsection observer_problem Design problem
+ * Several independent services need to react to workflow events, but workflow
+ * execution should not depend on specific audit, notification, or monitoring
+ * implementations.
+ *
+ * @subsection observer_participants Participants
+ * - **Subject:** `WorkflowSubject`, concretely `WorkflowInstance`.
+ * - **Observer:** `WorkflowObserver`.
+ * - **Concrete observers:** `AuditLogger`, `DependencyTracker`,
+ *   `NotificationService`, and `IncidentMonitor`.
+ * - **Event:** `WorkflowEvent`.
+ *
+ * @subsection observer_collaboration Collaboration
+ * Observers subscribe to selected event types. When the instance publishes an
+ * event, it pushes that event to its current subscribers. Each observer
+ * independently records, tracks, notifies, or monitors the event.
+ *
+ * @subsection observer_variation What varies
+ * Observers and their event subscriptions vary independently of the subject.
+ * The subject does not need to know each observer's purpose.
+ *
+ * @subsection observer_fit Why it fits
+ * New event consumers can be attached without embedding their behavior in
+ * workflow execution. The subject does not own observers, so their lifetime
+ * remains the subscriber's responsibility.
+ *
+ * @section prototype_pattern 13. Prototype
+ *
+ * @subsection prototype_problem Design problem
+ * A reusable workflow definition describes a template, but each running
+ * workflow needs its own independent component tree. Rebuilding the tree
+ * manually for each instance risks sharing mutable execution state or
+ * duplicating construction logic.
+ *
+ * @subsection prototype_participants Participants
+ * - **Prototype:** `WorkflowComponent`, with concrete `Stage`, `SubProcess`,
+ *   and `WorkItem` implementations.
+ * - **Client:** `WorkflowDefinition`, which owns the template and calls
+ *   `clone()` to create each instance's independent tree.
+ * - **Additional prototype use:** `AssignmentStrategy`, whose configured
+ *   strategies are cloned by `WorkAssigner`.
+ *
+ * @subsection prototype_collaboration Collaboration
+ * When an instance is requested, the definition clones its root component.
+ * Stages recursively clone their children; work items copy definition data
+ * while starting in their initial state. The cloned root is given to the new
+ * instance, keeping its runtime state separate from the template and other
+ * instances.
+ *
+ * @subsection prototype_variation What varies
+ * The concrete component and strategy types determine how their own
+ * configuration is copied. Composite components recursively reproduce their
+ * structure.
+ *
+ * @subsection prototype_fit Why it fits
+ * Cloning supports independent instances from one reusable definition while
+ * preserving the configured component structure. Strategy prototypes also
+ * give the assigner its own strategy objects.
+ *
+ * @section state_pattern 14. State
+ *
+ * @subsection state_problem Design problem
+ * The operations allowed on a work item depend on its lifecycle state.
+ * Scattering state checks through every caller would duplicate transition
+ * rules and make invalid operations difficult to handle consistently.
+ *
+ * @subsection state_participants Participants
+ * - **Context:** `WorkItem`, which delegates lifecycle operations to its
+ *   current state.
+ * - **State interface:** `WorkItemState`.
+ * - **Concrete states:** `CreatedState`, `AvailableState`, `AssignedState`,
+ *   `InProgressState`, `SuspendedState`, `EscalatedState`, and terminal states
+ *   such as `CompletedState`, `RejectedState`, `CancelledState`, and
+ *   `SkippedState`.
+ *
+ * @subsection state_collaboration Collaboration
+ * A work item delegates an operation such as `start()` or `complete()` to its
+ * current state. The concrete state either performs an allowed transition by
+ * replacing the item's state or rejects the operation with
+ * `InvalidTransitionException`. Shared state instances are resolved by name
+ * when restoring snapshots.
+ *
+ * @subsection state_variation What varies
+ * Each concrete state defines its legal transitions, disposition, and
+ * terminal-state behavior. The item itself retains its identity and data as
+ * its state changes.
+ *
+ * @subsection state_fit Why it fits
+ * Transition rules are organized by state instead of accumulated in
+ * conditional logic on the work item. Invalid transitions are reported
+ * consistently.
+ *
+ * @section strategy_pattern 15. Strategy
+ *
+ * @subsection strategy_problem Design problem
+ * Work assignment can use different policies, such as selecting the first
+ * eligible participant, balancing workload, rotating participants, or
+ * deriving a role from item data. The assignment process should support these
+ * policies without hard-coding one algorithm.
+ *
+ * @subsection strategy_participants Participants
+ * - **Strategy:** `AssignmentStrategy`.
+ * - **Concrete strategies:** `RoleBasedStrategy`, `ShortestQueueStrategy`,
+ *   `RoundRobinStrategy`, and `DataRuleStrategy`.
+ * - **Context:** `WorkAssigner`, which keeps strategy instances and selects
+ *   the configured policy for an item.
+ * - **Inputs:** the work item and candidate participants.
+ *
+ * @subsection strategy_collaboration Collaboration
+ * The assigner selects a strategy by the item's assignment rule, passes it
+ * the item and participant pool, and uses the returned eligible participant.
+ * The strategy encapsulates how candidates are filtered and selected.
+ *
+ * @subsection strategy_variation What varies
+ * The selection algorithm and, for data-driven assignment, the mapping from
+ * item values to roles vary independently of the assigner.
+ *
+ * @subsection strategy_fit Why it fits
+ * Assignment policy can be changed or extended without changing the engine's
+ * assignment flow. Strategies are cloned so the assigner owns its configured
+ * copies and can isolate stateful policies such as round-robin.
+ *
+ * @section visitor_pattern 16. Visitor
+ *
+ * @subsection visitor_problem Design problem
+ * Reporting and operational analysis should not be embedded in workflow
+ * execution classes. The Visitor pattern keeps those operations in separate
+ * classes, allowing reports and checks to be added without changing how
+ * workflow items execute.
+ *
+ * @subsection visitor_participants Participants
+ * - **Element interface:** `WorkflowElement`, which defines `accept()`.
+ * - **Concrete elements:** `WorkflowInstance`, `Stage`, `WorkItem`, and
+ *   `ProcessDataStore`.
+ * - **Visitor interface:** `WorkflowVisitor`, which defines visit operations
+ *   for instances, stages, work items, and snapshot stores.
+ * - **Concrete visitors:** `AuditReportVisitor` and `BottleneckVisitor`.
+ * - **Clients:** the TUI and API create visitors and pass them to workflow
+ *   instances.
+ *
+ * @subsection visitor_collaboration Collaboration
+ * A client calls `accept(visitor)` on a `WorkflowInstance`. The instance
+ * dispatches to `visitInstance()` and then passes the visitor to its root
+ * component. Each `Stage` dispatches to `visitStage()` before recursively
+ * visiting its children; each `WorkItem` dispatches to `visitWorkItem()`.
+ * This is double dispatch: the concrete element selects the corresponding
+ * operation on the visitor.
+ *
+ * `AuditReportVisitor` reports the instance identifier and version, stage
+ * names, and work-item identifiers, names, and states. When explicitly passed
+ * a `ProcessDataStore`, it also builds a timestamp-ordered compliance
+ * timeline from active and archived snapshots.
+ *
+ * `BottleneckVisitor` reports stage and work-item elapsed-time limit breaches
+ * when entry times have been supplied through its setters. Its defaults are
+ * 30 seconds for each limit. When explicitly passed a `ProcessDataStore`, it
+ * reports an exceeded log threshold and moves older checkpoints to backup
+ * storage.
+ *
+ * @subsection visitor_variation What varies
+ * The reporting and analysis algorithm varies by concrete visitor. New
+ * visitors can implement additional analyses using the existing element
+ * structure and visit operations.
+ *
+ * @subsection visitor_fit Why it fits
+ * The workflow classes retain responsibility for workflow structure and
+ * execution, while audit reporting and bottleneck checks live in separate
+ * visitors. This reduces changes to execution code when adding another
+ * analysis. A new visitor can still require corresponding visit operations if
+ * it needs to handle a new kind of element.
  *
  * @section building Building
  * Configure and build the project with CMake:
