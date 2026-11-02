@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TIVIDY | Workflow Engine</title>
+
+    <!-- Tailwind v4 browser build -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <!-- Fonts: Plus Jakarta Sans for brand/headings, Inter for body -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <style type="text/tailwindcss">
+        @theme {
+            --color-brand: #FF6B00;
+            --color-brand-hover: #E55F00;
+            --color-brand-light: #FFF4ED;
+            --color-accent: #5B2C8D;
+            --color-accent-light: #F5F0FA;
+            --font-sans: "Inter", system-ui, sans-serif;
+            --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+        }
+
+        body { font-family: var(--font-sans); }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+        /* Modal fade-in */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.97); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+        .modal-enter { animation: fadeIn 0.15s ease-out; }
+
+        /* Brand gradient text */
+        .brand-gradient {
+            background: linear-gradient(135deg, #FF6B00 0%, #FF8C33 50%, #5B2C8D 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Tree indentation guides */
+        .tree-children {
+            border-left: 2px solid #E2E8F0;
+            margin-left: 10px;
+            padding-left: 8px;
+        }
+    </style>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col">
+
+    <!-- ==================== Top bar ==================== -->
+    <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0">
+        <div class="flex items-center gap-3">
+            <span class="font-display text-2xl font-extrabold tracking-tight brand-gradient select-none">
+                TIVIDY
+            </span>
+            <span class="hidden sm:inline text-xs font-medium text-slate-400 uppercase tracking-widest mt-1">
+                Workflow Engine
+            </span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button id="btn-systems"
+                    class="hidden sm:inline-flex items-center px-3.5 py-2 rounded-lg text-sm font-medium
+                           text-slate-600 bg-white border border-slate-200 hover:bg-slate-50
+                           hover:text-slate-900 transition-colors cursor-pointer">
+                Systems
+            </button>
+            <button id="btn-advance"
+                    class="hidden sm:inline-flex items-center px-3.5 py-2 rounded-lg text-sm font-medium
+                           text-slate-600 bg-white border border-slate-200 hover:bg-slate-50
+                           hover:text-slate-900 transition-colors cursor-pointer">
+                Advance Time
+            </button>
+            <button id="btn-new"
+                    class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold
+                           text-white bg-brand hover:bg-brand-hover shadow-sm transition-colors cursor-pointer">
+                Start Workflow
+            </button>
+        </div>
+    </header>
+
+    <!-- ==================== Main layout ==================== -->
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar -->
+        <nav class="w-56 bg-white border-r border-slate-200 p-4 shrink-0 hidden md:flex flex-col gap-1">
+            <a href="#" onclick="renderView('dashboard'); return false;"
+               class="sidebar-link flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium
+                      text-brand bg-brand-light transition-colors">
+                <span class="w-1 h-4 rounded-full bg-brand"></span>
+                Dashboard
+            </a>
+        </nav>
+
+        <!-- Main content -->
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 min-w-0" id="main">
+            <div class="text-sm text-slate-400 italic">Loading instances...</div>
+        </main>
+    </div>
+
+    <!-- Modal root (everything injected here) -->
+    <div id="modal-root"></div>
+
+    <!-- Toast container -->
+    <div id="toast-root" class="fixed bottom-4 right-4 z-[200] flex flex-col gap-2"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>

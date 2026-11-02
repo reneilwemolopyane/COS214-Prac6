@@ -1,0 +1,11 @@
+
+build/
+build-*/
+cmake-build-*/
+.git/
+.vscode/
+*.exe
+*.o
+*.a
+*.dll
+*.so
